@@ -2,7 +2,193 @@
 
 
 
-SPA mobile-first desarrollada con React + TypeScript que consume una API de Pokédex. Implementa autenticación segura con access tokens en memoria y refresh tokens en cookies httpOnly.This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+SPA mobile-first desarrollada con React + TypeScript que consume una API de Pokédex. Implementa autenticación segura con access tokens en memoria y refresh tokens en cookies httpOnly.# 🔴 SukaFront - Pokédex SPA
+
+Una aplicación web moderna de Pokédx construida con React 19, TypeScript 5 y Vite, con un sistema completo de autenticación y temas.
+
+## ✨ Características Principales
+
+### 🔐 **Sistema de Autenticación**
+- JWT con refresh automático
+- Logout automático al expirar tokens
+- Redirecciones inteligentes (login ↔ dashboard)
+- Persistencia de sesión segura
+
+### 🎨 **Sistema de Temas**
+- Modo claro/oscuro con toggle
+- CSS tokens semánticos
+- Gradiente rojo personalizado (#b00000 → #742020)
+- Logo adaptativo con fondo automático
+
+### 🧩 **Pokédx UI**
+- Grid de cartas de Pokémon
+- Búsqueda en tiempo real
+- Detalles de Pokémon individual
+- Diseño responsivo
+
+### 🏗️ **Arquitectura**
+- React 19 + TypeScript 5
+- Vite para desarrollo rápido
+- Tailwind CSS v4 con tokens CSS
+- React Router v7 para navegación
+- Axios con interceptores
+- Vitest para testing
+
+## 🚀 Inicio Rápido
+
+### Prerequisitos
+- Node.js 18+
+- npm/pnpm/yarn
+
+### Instalación
+
+```bash
+# Clonar repositorio
+git clone https://github.com/JPSamaNu/SukaFront.git
+cd SukaFront
+
+# Instalar dependencias
+npm install
+# o
+pnpm install
+
+# Configurar variables de entorno
+cp .env.example .env
+# Editar .env con tu API URL
+
+# Iniciar desarrollo
+npm run dev
+# o
+pnpm dev
+```
+
+La aplicación estará disponible en: `http://localhost:2769`
+
+## 🔧 Scripts Disponibles
+
+```bash
+npm run dev          # Servidor de desarrollo
+npm run build        # Build para producción
+npm run preview      # Vista previa del build
+npm run test         # Ejecutar tests
+npm run lint         # Linter ESLint
+npm run format       # Prettier formatter
+```
+
+## 📁 Estructura del Proyecto
+
+```
+src/
+├── app/                 # Configuración de rutas
+├── features/           # Características por dominio
+│   ├── auth/          # Autenticación
+│   ├── layout/        # Layout principal
+│   └── pokedex/       # Pokédx
+├── shared/             # Código compartido
+│   ├── api/           # Cliente HTTP
+│   ├── brand/         # Logo y branding
+│   ├── components/    # Componentes UI
+│   ├── theme/         # Sistema de temas
+│   └── types/         # Tipos TypeScript
+└── styles/            # Estilos globales
+```
+
+## 🎨 Sistema de Temas
+
+### Tokens CSS Principales
+```css
+--brand:       #ee1515    /* Rojo Pokédx */
+--primary:     #b00000    /* Gradiente claro */
+--primary-600: #742020    /* Gradiente oscuro */
+--accent:      #ffcc00    /* Amarillo */
+--surface:     #ffffff    /* Fondo */
+--text:        #1f2937    /* Texto */
+```
+
+### Uso del Logo
+```tsx
+<Logo variant="full" withBackground />     // Logo completo con fondo
+<Logo variant="mark" withBackground />     // Logo pequeño con fondo
+```
+
+## 🧪 Testing
+
+```bash
+# Ejecutar todos los tests
+npm test
+
+# Tests específicos
+npm test src/shared/brand    # Tests del Logo
+npm test src/shared/theme    # Tests del sistema de temas
+```
+
+## 🔐 Autenticación
+
+El sistema maneja automáticamente:
+- **Tokens JWT** en memoria con fallback a sessionStorage
+- **Refresh automático** cuando expiran
+- **Redirecciones** basadas en estado de autenticación
+- **Logout automático** en errores 401
+
+### Endpoints Esperados
+```typescript
+POST /auth/login     // { email, password } → { access_token, user }
+POST /auth/refresh   // Cookie httpOnly → { access_token }
+POST /auth/logout    // Limpiar refresh token
+GET  /auth/profile   // Verificar token válido
+```
+
+## 🌐 Variables de Entorno
+
+```env
+VITE_API_URL=http://localhost:3000/api
+VITE_ENABLE_SESSION_FALLBACK=true
+```
+
+## 📦 Dependencias Principales
+
+- **React 19** - UI Framework
+- **TypeScript 5** - Type Safety
+- **Vite** - Build Tool
+- **Tailwind CSS v4** - Styling
+- **React Router v7** - Routing
+- **Axios** - HTTP Client
+- **React Hook Form** - Forms
+- **Zod** - Validation
+- **Vitest** - Testing
+
+## 🚀 Deployment
+
+### Build para Producción
+```bash
+npm run build
+```
+
+### Deploy en Vercel/Netlify
+1. Conectar repositorio
+2. Configurar variables de entorno
+3. Build command: `npm run build`
+4. Output directory: `dist`
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crear rama feature (`git checkout -b feature/AmazingFeature`)
+3. Commit cambios (`git commit -m 'Add AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abrir Pull Request
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia MIT. Ver `LICENSE` para más detalles.
+
+## 👨‍💻 Autor
+
+**JPSamaNu** - [GitHub](https://github.com/JPSamaNu)
+
+---
+
+⭐ ¡Dale una estrella si te gusta el proyecto!
 
 
 
