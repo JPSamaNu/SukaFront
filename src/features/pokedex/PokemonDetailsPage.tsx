@@ -1,39 +1,40 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import { pokemonApi } from '@/shared/api/pokemon.api'
 import type { Pokemon } from '@/shared/types/pokemon'
 
 export default function PokemonDetailsPage() {
-  const { name } = useParams<{ name: string }>()
+  const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [pokemon, setPokemon] = useState<Pokemon | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchPokemon = async () => {
-      if (!name) return
+      if (!id) return
 
       try {
         setLoading(true)
-        const response = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`)
-        
-        if (!response.ok) {
-          throw new Error('Pokémon no encontrado')
-        }
-        
-        const data: Pokemon = await response.json()
+        const data = await pokemonApi.getById(id)
+        console.log('🎮 Datos del Pokémon recibidos:', data)
+        console.log('🎨 Sprites:', data.sprites)
+        console.log('📊 Types:', data.types)
+        console.log('💪 Stats:', data.stats)
         setPokemon(data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error desconocido')
+        console.error('❌ Error fetching pokemon:', err)
+        setError(err instanceof Error ? err.message : 'Error al cargar el Pokémon')
       } finally {
         setLoading(false)
       }
     }
 
     fetchPokemon()
-  }, [name])
+  }, [id])
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
@@ -105,9 +106,9 @@ export default function PokemonDetailsPage() {
         <Card className="max-w-md mx-auto">
           <CardContent className="p-6">
             <p className="text-red-600 mb-4">{error || 'Pokémon no encontrado'}</p>
-            <Link to="/">
-              <Button>Volver a la Pokédex</Button>
-            </Link>
+            <Button onClick={() => navigate(-1)}>
+              Volver
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -116,15 +117,15 @@ export default function PokemonDetailsPage() {
 
   const pokemonNumber = pokemon.id.toString().padStart(3, '0')
   const capitalizedName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
-  const mainImage = pokemon.sprites.other['official-artwork'].front_default || pokemon.sprites.front_default
+  const mainImage = pokemon.sprites?.other?.['official-artwork']?.front_default || pokemon.sprites?.front_default || null
 
   return (
     <div className="space-y-6">
       {/* Navegación */}
       <div className="flex items-center space-x-4">
-        <Link to="/">
-          <Button variant="outline">← Volver</Button>
-        </Link>
+        <Button variant="outline" onClick={() => navigate(-1)}>
+          ← Volver
+        </Button>
         <h1 className="text-2xl font-bold text-theme-foreground">
           #{pokemonNumber} {capitalizedName}
         </h1>
@@ -155,14 +156,17 @@ export default function PokemonDetailsPage() {
 
               {/* Tipos */}
               <div className="flex justify-center space-x-2">
-                {pokemon.types.map((type, index) => (
-                  <span
-                    key={index}
-                    className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getTypeColor(type.type.name)}`}
-                  >
-                    {type.type.name.charAt(0).toUpperCase() + type.type.name.slice(1)}
-                  </span>
-                ))}
+                {pokemon.types && pokemon.types.length > 0 && pokemon.types.map((type, index) => {
+                  const typeName = type?.type?.name || 'unknown'
+                  return (
+                    <span
+                      key={index}
+                      className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getTypeColor(typeName)}`}
+                    >
+                      {typeName.charAt(0).toUpperCase() + typeName.slice(1)}
+                    </span>
+                  )
+                })}
               </div>
 
               {/* Altura y peso */}
@@ -187,16 +191,18 @@ export default function PokemonDetailsPage() {
           </CardHeader>
           <CardContent className="p-6">
             <div className="space-y-4">
-              {pokemon.stats.map((stat, index) => {
-                const percentage = Math.min((stat.base_stat / 150) * 100, 100)
+              {pokemon.stats && pokemon.stats.length > 0 && pokemon.stats.map((stat, index) => {
+                const statName = stat?.name || 'unknown'
+                const baseStat = stat?.baseStat || 0
+                const percentage = Math.min((baseStat / 150) * 100, 100)
                 return (
                   <div key={index}>
                     <div className="flex justify-between items-center mb-1">
                       <span className="text-sm font-medium text-theme-muted-foreground">
-                        {formatStatName(stat.stat.name)}
+                        {formatStatName(statName)}
                       </span>
                       <span className="text-sm font-bold">
-                        {stat.base_stat}
+                        {baseStat}
                       </span>
                     </div>
                     <div className="w-full bg-theme-muted rounded-full h-2">
@@ -215,7 +221,7 @@ export default function PokemonDetailsPage() {
               <div className="flex justify-between items-center">
                 <span className="font-medium text-theme-foreground">Total</span>
                 <span className="text-lg font-bold text-pokedex-red">
-                  {pokemon.stats.reduce((total, stat) => total + stat.base_stat, 0)}
+                  {pokemon.stats?.reduce((total, stat) => total + (stat?.baseStat || 0), 0) || 0}
                 </span>
               </div>
             </div>

@@ -19,7 +19,7 @@ export const setTokenExpiredCallback = (callback: () => void) => {
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   withCredentials: true, // para enviar cookies httpOnly del refresh token
-  timeout: 12000,
+  timeout: 60000, // 60 segundos para endpoints pesados como generaciones con todos los pokemon
 })
 
 // Token en memoria

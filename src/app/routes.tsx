@@ -4,6 +4,8 @@ import PublicRoute from '@/features/auth/PublicRoute'
 import LoginPage from '@/features/auth/LoginPage'
 import RegisterPage from '@/features/auth/RegisterPage'
 import MainLayout from '@/features/layout/MainLayout'
+import GenerationsPage from '@/features/generations/GenerationsPage'
+import GenerationDetailsPage from '@/features/generations/GenerationDetailsPage'
 import PokedexPage from '@/features/pokedex/PokedexPage'
 import PokemonDetailsPage from '@/features/pokedex/PokemonDetailsPage'
 
@@ -32,10 +34,18 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
+            element: <GenerationsPage />,
+          },
+          {
+            path: 'generation/:id',
+            element: <GenerationDetailsPage />,
+          },
+          {
+            path: 'pokedex',
             element: <PokedexPage />,
           },
           {
-            path: 'pokedex/:name',
+            path: 'pokemon/:id',
             element: <PokemonDetailsPage />,
           },
         ],

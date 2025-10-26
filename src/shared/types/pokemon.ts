@@ -4,8 +4,17 @@ export interface Pokemon {
   name: string
   sprites: {
     front_default: string | null
-    other: {
-      'official-artwork': {
+    front_shiny?: string | null
+    back_default?: string | null
+    back_shiny?: string | null
+    other?: {
+      'official-artwork'?: {
+        front_default: string | null
+      }
+      dream_world?: {
+        front_default: string | null
+      }
+      home?: {
         front_default: string | null
       }
     }
@@ -16,10 +25,9 @@ export interface Pokemon {
     }
   }>
   stats: Array<{
-    base_stat: number
-    stat: {
-      name: string
-    }
+    name: string
+    baseStat: number
+    effort: number
   }>
   height: number
   weight: number
