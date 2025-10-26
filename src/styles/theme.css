@@ -1,0 +1,75 @@
+/* src/styles/theme.css */
+
+/* ===== Tokens semánticos por defecto (Pokedex Light) ===== */
+:root,
+.theme-pokedex {
+  /* Paleta tipo Pokédx */
+  --brand:       #ee1515; /* rojo pokedex */
+  --brand-600:   #d41313;
+  --accent:      #ffcc00; /* amarillo */
+  --accent-700:  #e0b300;
+  --primary:     #b00000; /* rojo más claro para gradiente */
+  --primary-700: #2a56a0;
+  --primary-600: #742020; /* rojo más oscuro para gradiente */
+  --primary-light: rgba(255, 255, 255, 0.9); /* blanco semi-transparente para texto sobre gradientes */
+
+  --surface:     #ffffff;
+  --surface-2:   #f5f5f5;
+  --text:        #1f2937; /* gris casi negro */
+  --muted:       #6b7280;
+
+  --ring:        var(--brand);
+  --success:     #23d966;
+  --warning:     #eeaf00;
+  --danger:      #ef4444;
+
+  /* Component aliases */
+  --btn-bg:      var(--brand);
+  --btn-fg:      #ffffff;
+  --card-bg:     var(--surface);
+  --card-border: #e5e7eb;
+  --logo-bg:     rgba(133, 133, 133, 0.2); /* fondo más sutil para logo en modo claro */
+
+  /* Shadows & radii */
+  --radius: 1rem;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.06);
+  --shadow:    0 10px 15px rgba(0,0,0,.08);
+}
+
+/* ===== Pokedex Dark ===== */
+.theme-pokedex-dark {
+  --brand:       #f04747;
+  --brand-600:   #e63c3c;
+  --accent:      #ffd54d;
+  --accent-700:  #e6bf45;
+  --primary:     #d41313; /* rojo más claro para modo oscuro */
+  --primary-700: #3a63b0;
+  --primary-600: #8b1a1a; /* rojo más oscuro para modo oscuro */
+  --primary-light: rgba(255, 255, 255, 0.95); /* blanco más opaco para modo oscuro */
+
+  --surface:     #0b0f1a;   /* fondo oscuro */
+  --surface-2:   #121826;
+  --text:        #e5e7eb;
+  --muted:       #9ca3af;
+
+  --ring:        var(--brand);
+  --success:     #3ddc84;
+  --warning:     #ffc107;
+  --danger:      #ff6b6b;
+
+  --btn-bg:      var(--brand);
+  --btn-fg:      #101316;
+  --card-bg:     #0f1422;
+  --card-border: #1f2937;
+  --logo-bg:     rgba(133, 133, 133, 0.7); /* fondo más visible para logo en modo oscuro */
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow:    0 10px 20px rgba(0,0,0,.35);
+}
+
+/* ===== Utilidades base compatibles con Tailwind ===== */
+:root, .theme-pokedex, .theme-pokedex-dark {
+  color-scheme: light dark;
+}
+
+html, body, #root { height: 100%; }

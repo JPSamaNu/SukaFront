@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+@theme {
+  --color-pokedex-red: #EE1515;
+  --color-pokedex-yellow: #FFCC00;
+  --color-pokedex-black: #1F2937;
+  --color-pokedex-gray: #F5F5F5;
+}
+
+body {
+  background-color: var(--color-pokedex-gray);
+  color: var(--color-pokedex-black);
+}
+
+.btn {
+  @apply px-4 py-2 bg-pokedex-red text-white rounded-lg font-medium transition-colors hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pokedex-red focus:border-transparent;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-lg overflow-hidden;
+}
+
+.pokedex-visor {
+  @apply w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full shadow-inner border-4 border-gray-300;
+}
+
+.pokedex-light {
+  @apply w-3 h-3 rounded-full shadow-sm;
+}

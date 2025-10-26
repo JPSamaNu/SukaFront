@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="SukaDex mark">
+  <defs>
+    <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#EE1515"></stop>
+      <stop offset="100%" stop-color="#D41313"></stop>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="28" fill="url(#g)"></circle>
+  <path d="M4 32h56" stroke="#1F2937" stroke-width="7" opacity="0.9"></path>
+  <circle cx="32" cy="32" r="12" fill="#FFFFFF" stroke="#1F2937" stroke-width="7"></circle>
+  <circle cx="32" cy="32" r="5" fill="#FFCC00"></circle>
+</svg>
