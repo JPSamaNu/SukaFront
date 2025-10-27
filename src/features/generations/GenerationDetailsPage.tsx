@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { generationsApi, type GenerationWithPokemon } from '@/shared/api/generations.api'
+import { generationsApi, type GenerationWithPokemon, type Generation } from '@/shared/api/generations.api'
 import { Card } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Button } from '@/shared/components/ui/button'
@@ -9,6 +9,7 @@ export default function GenerationDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [generation, setGeneration] = useState<GenerationWithPokemon | null>(null)
+  const [generationInfo, setGenerationInfo] = useState<Generation | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,6 +23,16 @@ export default function GenerationDetailsPage() {
     try {
       setLoading(true)
       setError(null)
+      
+      // Cargar primero la lista de generaciones para obtener la info correcta
+      const allGenerations = await generationsApi.getAll()
+      const correctInfo = allGenerations.data.find(gen => gen.id === generationId)
+      
+      if (correctInfo) {
+        setGenerationInfo(correctInfo)
+      }
+      
+      // Luego cargar los pokemon de la generación
       const data = await generationsApi.getById(generationId)
       console.log('✅ Datos de la generación recibidos:', data)
       console.log('📊 Total de Pokémon:', data.pokemon?.length)
@@ -126,14 +137,14 @@ export default function GenerationDetailsPage() {
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
           <h1 className="text-4xl font-bold text-[color:var(--text)] capitalize">
-            {generation.info?.name ? generation.info.name.replace(/-/g, ' ') : `Generación ${generation.generation}`}
+            {generationInfo?.name ? generationInfo.name.replace(/-/g, ' ') : `Generación ${generation.generation}`}
           </h1>
           <span className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-full text-sm font-semibold">
             GEN {generation.generation}
           </span>
         </div>
         <p className="text-[color:var(--muted)] text-lg">
-          {generation.info?.region || 'Región desconocida'} • {generation.pokemonCount || 0} Pokémon
+          {generationInfo?.region || generation.info?.region || 'Región desconocida'} • {generationInfo?.pokemonCount || generation.pokemonCount || 0} Pokémon
         </p>
       </div>
 
@@ -174,16 +185,21 @@ export default function GenerationDetailsPage() {
                     </h3>
                     
                     <div className="flex gap-1 justify-center flex-wrap">
-                      {pokemon.types && pokemon.types.map((type) => (
-                        <span
-                          key={type}
-                          className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
-                            typeColors[type.toLowerCase()] || 'bg-gray-400'
-                          }`}
-                        >
-                          {type}
-                        </span>
-                      ))}
+                      {pokemon.types && pokemon.types.map((type, index) => {
+                        // Manejar ambos formatos: string o {name: string, slot: number}
+                        const typeName = typeof type === 'string' ? type : type?.name
+                        if (!typeName) return null
+                        return (
+                          <span
+                            key={`${typeName}-${index}`}
+                            className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
+                              typeColors[typeName.toLowerCase()] || 'bg-gray-400'
+                            }`}
+                          >
+                            {typeName}
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>

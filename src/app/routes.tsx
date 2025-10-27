@@ -7,6 +7,7 @@ import MainLayout from '@/features/layout/MainLayout'
 import DashboardPage from '@/features/dashboard/DashboardPage'
 import GenerationsPage from '@/features/generations/GenerationsPage'
 import GenerationDetailsPage from '@/features/generations/GenerationDetailsPage'
+import AllPokemonPage from '@/features/pokedex/AllPokemonPage'
 import PokedexPage from '@/features/pokedex/PokedexPage'
 import PokemonDetailsPage from '@/features/pokedex/PokemonDetailsPage'
 import TypesTablePage from '@/features/types/TypesTablePage'
@@ -45,6 +46,14 @@ export const router = createBrowserRouter([
           {
             path: 'generation/:id',
             element: <GenerationDetailsPage />,
+          },
+          {
+            path: 'all-pokemon',
+            element: <AllPokemonPage />,
+          },
+          {
+            path: 'pokedex',
+            element: <PokedexPage />,
           },
           {
             path: 'generation',

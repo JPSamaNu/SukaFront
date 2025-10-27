@@ -24,7 +24,9 @@ export interface GenerationWithPokemon {
   pokemon?: Array<{
     id: number
     name: string
-    types?: string[]
+    // SOPORTE PARA AMBOS FORMATOS (temporal)
+    types?: Array<string | { name: string; slot: number }>
+    abilities?: Array<string | { name: string; slot: number; is_hidden: boolean }>
     sprites?: {
       front_default: string | null
       front_shiny: string | null
