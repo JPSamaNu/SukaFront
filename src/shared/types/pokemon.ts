@@ -7,6 +7,8 @@ export interface Pokemon {
     front_shiny?: string | null
     back_default?: string | null
     back_shiny?: string | null
+    back_female?: string | null
+    front_female?: string | null
     other?: {
       'official-artwork'?: {
         front_default: string | null
@@ -18,19 +20,24 @@ export interface Pokemon {
         front_default: string | null
       }
     }
+    versions?: any
   }
-  types: Array<{
-    type: {
-      name: string
-    }
-  }>
+  // SOPORTE PARA AMBOS FORMATOS (temporal hasta aplicar estandarización)
+  types: Array<string | { name: string; slot: number }>
   stats: Array<{
     name: string
-    baseStat: number
+    base_stat?: number  // formato snake_case (estandarizado)
+    baseStat?: number   // formato camelCase (legacy)
     effort: number
   }>
+  abilities: Array<string | { name: string; slot: number; is_hidden: boolean }>
   height: number
   weight: number
+  baseExperience: number
+  speciesId: number
+  speciesName: string
+  generationId: number
+  generationName: string
 }
 
 // Respuesta de la API de listado

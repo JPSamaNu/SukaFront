@@ -157,7 +157,9 @@ export default function PokemonDetailsPage() {
               {/* Tipos */}
               <div className="flex justify-center space-x-2">
                 {pokemon.types && pokemon.types.length > 0 && pokemon.types.map((type, index) => {
-                  const typeName = type?.type?.name || 'unknown'
+                  // Manejar ambos formatos: string o {name: string, slot: number}
+                  const typeName = typeof type === 'string' ? type : type?.name
+                  if (!typeName) return null
                   return (
                     <span
                       key={index}
@@ -193,7 +195,8 @@ export default function PokemonDetailsPage() {
             <div className="space-y-4">
               {pokemon.stats && pokemon.stats.length > 0 && pokemon.stats.map((stat, index) => {
                 const statName = stat?.name || 'unknown'
-                const baseStat = stat?.baseStat || 0
+                // Manejar ambos formatos: base_stat (snake_case) o baseStat (camelCase)
+                const baseStat = stat?.base_stat ?? stat?.baseStat ?? 0
                 const percentage = Math.min((baseStat / 150) * 100, 100)
                 return (
                   <div key={index}>
@@ -221,7 +224,7 @@ export default function PokemonDetailsPage() {
               <div className="flex justify-between items-center">
                 <span className="font-medium text-theme-foreground">Total</span>
                 <span className="text-lg font-bold text-pokedex-red">
-                  {pokemon.stats?.reduce((total, stat) => total + (stat?.baseStat || 0), 0) || 0}
+                  {pokemon.stats?.reduce((total, stat) => total + (stat?.base_stat ?? stat?.baseStat ?? 0), 0) || 0}
                 </span>
               </div>
             </div>

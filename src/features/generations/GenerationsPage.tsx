@@ -91,6 +91,36 @@ export default function GenerationsPage() {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        {/* Tarjeta especial: Todos los Pokémon */}
+        <Card
+          className="bg-gradient-to-br from-red-50 to-blue-50 border-2 border-red-400 hover:border-red-600 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
+          onClick={() => navigate('/all-pokemon')}
+        >
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-semibold text-red-600">
+                POKÉDEX NACIONAL
+              </span>
+              <span className="px-3 py-1 bg-white rounded-full text-sm font-medium text-gray-700">
+                {generations.reduce((sum, gen) => sum + (typeof gen.pokemonCount === 'string' ? parseInt(gen.pokemonCount) : gen.pokemonCount), 0)} Pokémon
+              </span>
+            </div>
+            
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">
+              🌍 Todos los Pokémon
+            </h2>
+            
+            <p className="text-gray-600 font-medium mb-4">
+              Explora la Pokédex completa con scroll infinito
+            </p>
+            
+            <div className="text-sm text-gray-500 italic">
+              Generaciones I - IX
+            </div>
+          </div>
+        </Card>
+
+        {/* Generaciones existentes */}
         {generations.map((generation) => {
           const colors = generationColors[generation.id] || generationColors[1]
           const pokemonCount = typeof generation.pokemonCount === 'string' 
