@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { generationsApi, type Generation } from '@/shared/api/generations.api'
 import { Card } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
+import ErrorPage from '@/shared/components/ErrorPage'
 
 export default function GenerationsPage() {
   const [generations, setGenerations] = useState<Generation[]>([])
@@ -63,19 +64,11 @@ export default function GenerationsPage() {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-md mx-auto text-center">
-          <div className="bg-red-50 border border-red-300 rounded-lg p-6">
-            <p className="text-red-800 font-semibold mb-4">{error}</p>
-            <button
-              onClick={loadGenerations}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Reintentar
-            </button>
-          </div>
-        </div>
-      </div>
+      <ErrorPage
+        title="Error al cargar las generaciones"
+        message="No pudimos cargar la lista de generaciones. Por favor, verifica tu conexión e intenta nuevamente."
+        showLogout={false}
+      />
     )
   }
 
@@ -90,35 +83,7 @@ export default function GenerationsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {/* Tarjeta especial: Todos los Pokémon */}
-        <Card
-          className="bg-gradient-to-br from-red-50 to-blue-50 border-2 border-red-400 hover:border-red-600 cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1"
-          onClick={() => navigate('/all-pokemon')}
-        >
-          <div className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-red-600">
-                POKÉDEX NACIONAL
-              </span>
-              <span className="px-3 py-1 bg-white rounded-full text-sm font-medium text-gray-700">
-                {generations.reduce((sum, gen) => sum + (typeof gen.pokemonCount === 'string' ? parseInt(gen.pokemonCount) : gen.pokemonCount), 0)} Pokémon
-              </span>
-            </div>
-            
-            <h2 className="text-2xl font-bold text-gray-800 mb-2">
-              🌍 Todos los Pokémon
-            </h2>
-            
-            <p className="text-gray-600 font-medium mb-4">
-              Explora la Pokédex completa con scroll infinito
-            </p>
-            
-            <div className="text-sm text-gray-500 italic">
-              Generaciones I - IX
-            </div>
-          </div>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"> 
 
         {/* Generaciones existentes */}
         {generations.map((generation) => {

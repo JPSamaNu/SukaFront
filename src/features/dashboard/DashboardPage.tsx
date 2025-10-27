@@ -17,8 +17,8 @@ export default function DashboardPage() {
       id: 'pokedex',
       title: 'Pokédex Completa',
       description: 'Navega por todos los Pokémon disponibles',
-      icon: '�',
-      route: '/generation',
+      icon: '📕',
+      route: '/all-pokemon',
       color: 'from-[color:var(--brand)] to-[color:var(--brand-600)]'
     },
     {

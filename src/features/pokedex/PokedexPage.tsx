@@ -5,6 +5,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import PokemonCard from './PokemonCard'
 import type { PokemonSummary, PokemonListResponse } from '@/shared/types/pokemon'
+import ErrorPage from '@/shared/components/ErrorPage'
 
 export default function PokedexPage() {
   const [pokemonList, setPokemonList] = useState<PokemonSummary[]>([])
@@ -74,16 +75,11 @@ export default function PokedexPage() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6">
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Intentar de nuevo
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ErrorPage
+        title="Error al cargar el Pokédex"
+        message="No pudimos cargar la lista de Pokémon. Por favor, verifica tu conexión e intenta nuevamente."
+        showLogout={false}
+      />
     )
   }
 
