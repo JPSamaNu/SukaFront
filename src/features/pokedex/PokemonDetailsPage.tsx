@@ -13,6 +13,21 @@ export default function PokemonDetailsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  const [evolutionChain, setEvolutionChain] = useState<{
+    evolvesFrom: {
+      id: number
+      name: string
+      sprite: string
+      requirements: string
+    } | null
+    evolvesTo: Array<{
+      id: number
+      name: string
+      sprite: string
+      requirements: string
+    }>
+  } | null>(null)
+  const [loadingEvolution, setLoadingEvolution] = useState(false)
 
   useEffect(() => {
     const fetchPokemon = async () => {
@@ -35,6 +50,26 @@ export default function PokemonDetailsPage() {
     }
 
     fetchPokemon()
+  }, [id])
+
+  // Cargar cadena de evolución
+  useEffect(() => {
+    const fetchEvolution = async () => {
+      if (!id) return
+
+      try {
+        setLoadingEvolution(true)
+        const evolutionData = await pokemonApi.getEvolutionChain(id)
+        console.log('🔄 Cadena de evolución:', evolutionData)
+        setEvolutionChain(evolutionData)
+      } catch (err) {
+        console.error('❌ Error fetching evolution chain:', err)
+      } finally {
+        setLoadingEvolution(false)
+      }
+    }
+
+    fetchEvolution()
   }, [id])
 
   const getTypeColor = (type: string) => {
@@ -71,6 +106,10 @@ export default function PokemonDetailsPage() {
       'speed': 'Velocidad',
     }
     return names[statName] || statName
+  }
+
+  const capitalizeName = (name: string) => {
+    return name.charAt(0).toUpperCase() + name.slice(1)
   }
 
   const getStatColor = (value: number) => {
@@ -269,6 +308,105 @@ export default function PokemonDetailsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Cadena de evolución */}
+      {!loadingEvolution && evolutionChain && (evolutionChain.evolvesFrom || evolutionChain.evolvesTo.length > 0) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cadena de evolución</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              {/* Pre-evolución */}
+              {evolutionChain.evolvesFrom && (
+                <>
+                  <div 
+                    className="flex flex-col items-center gap-2 cursor-pointer group transition-transform hover:scale-105"
+                    onClick={() => navigate(`/pokemon/${evolutionChain.evolvesFrom!.id}`)}
+                  >
+                    <div className="w-32 h-32 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 group-hover:shadow-lg transition-shadow">
+                      <img
+                        src={evolutionChain.evolvesFrom.sprite}
+                        alt={evolutionChain.evolvesFrom.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <p className="text-sm font-medium text-center">
+                      #{evolutionChain.evolvesFrom.id.toString().padStart(3, '0')}
+                    </p>
+                    <p className="text-base font-bold text-center">
+                      {capitalizeName(evolutionChain.evolvesFrom.name)}
+                    </p>
+                  </div>
+
+                  {/* Flecha con requisito */}
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <p className="text-xs text-gray-600 text-center max-w-[100px]">
+                      {evolutionChain.evolvesFrom.requirements}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {/* Pokémon actual (destacado) */}
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-36 h-36 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-4 ring-4 ring-yellow-400 shadow-lg">
+                  <img
+                    src={mainImage || ''}
+                    alt={pokemon.name}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <p className="text-sm font-medium text-center">
+                  #{pokemonNumber}
+                </p>
+                <p className="text-lg font-bold text-center text-yellow-600">
+                  {capitalizedName}
+                </p>
+                <p className="text-xs text-gray-500 font-semibold">ACTUAL</p>
+              </div>
+
+              {/* Evoluciones */}
+              {evolutionChain.evolvesTo.map((evolution) => (
+                <div key={evolution.id} className="flex items-center gap-4">
+                  {/* Flecha con requisito */}
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                    <p className="text-xs text-gray-600 text-center max-w-[100px]">
+                      {evolution.requirements}
+                    </p>
+                  </div>
+
+                  {/* Evolución */}
+                  <div 
+                    className="flex flex-col items-center gap-2 cursor-pointer group transition-transform hover:scale-105"
+                    onClick={() => navigate(`/pokemon/${evolution.id}`)}
+                  >
+                    <div className="w-32 h-32 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-4 group-hover:shadow-lg transition-shadow">
+                      <img
+                        src={evolution.sprite}
+                        alt={evolution.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </div>
+                    <p className="text-sm font-medium text-center">
+                      #{evolution.id.toString().padStart(3, '0')}
+                    </p>
+                    <p className="text-base font-bold text-center">
+                      {capitalizeName(evolution.name)}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Modal de imagen en grande */}
       {isImageModalOpen && mainImage && (
