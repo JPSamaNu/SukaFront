@@ -27,9 +27,24 @@ class CacheManager {
       }
       localStorage.setItem(this.prefix + key, JSON.stringify(cacheItem))
     } catch (error) {
-      console.error('Error guardando en caché:', error)
-      // Si el localStorage está lleno, limpiar caché antiguo
-      this.clearExpired()
+      // Si el localStorage está lleno (QuotaExceededError), limpiar caché antiguo
+      if (error instanceof Error && error.name === 'QuotaExceededError') {
+        console.warn('⚠️ Caché lleno, limpiando datos expirados...')
+        this.clearExpired()
+        
+        // Intentar guardar de nuevo después de limpiar
+        try {
+          localStorage.setItem(this.prefix + key, JSON.stringify({
+            data,
+            timestamp: Date.now(),
+            expiresIn,
+          }))
+        } catch (retryError) {
+          console.warn('⚠️ No se pudo guardar en caché después de limpiar. Continuando sin caché.')
+        }
+      } else {
+        console.error('Error guardando en caché:', error)
+      }
     }
   }
 

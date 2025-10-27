@@ -51,6 +51,7 @@ export const pokemonApi = {
 
   /**
    * Obtener lista paginada de todos los Pokémon
+   * NOTA: No usa caché debido al gran volumen de datos y paginación dinámica
    */
   async getAll(params?: {
     page?: number
@@ -72,20 +73,8 @@ export const pokemonApi = {
     if (params?.sortBy) queryParams.sortBy = params.sortBy
     if (params?.sortOrder) queryParams.sortOrder = params.sortOrder
 
-    // Cachear por página específica
-    const cacheKey = `pokemon_list_${JSON.stringify(queryParams)}`
-    const cached = cache.get<PokemonListResponse>(cacheKey)
-    
-    if (cached) {
-      console.log(`📦 Lista de Pokémon página ${params?.page || 1} cargada desde caché`)
-      return cached
-    }
-
     console.log(`🌐 Cargando lista de Pokémon página ${params?.page || 1} desde API`)
     const response = await api.get<PokemonListResponse>('/pokemon', { params: queryParams })
-    
-    // Guardar en caché por 1 hora (las listas pueden cambiar más seguido)
-    cache.set(cacheKey, response.data, 60 * 60 * 1000)
     
     return response.data
   },
