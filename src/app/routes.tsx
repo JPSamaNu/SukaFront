@@ -4,10 +4,12 @@ import PublicRoute from '@/features/auth/PublicRoute'
 import LoginPage from '@/features/auth/LoginPage'
 import RegisterPage from '@/features/auth/RegisterPage'
 import MainLayout from '@/features/layout/MainLayout'
+import DashboardPage from '@/features/dashboard/DashboardPage'
 import GenerationsPage from '@/features/generations/GenerationsPage'
 import GenerationDetailsPage from '@/features/generations/GenerationDetailsPage'
 import PokedexPage from '@/features/pokedex/PokedexPage'
 import PokemonDetailsPage from '@/features/pokedex/PokemonDetailsPage'
+import TypesTablePage from '@/features/types/TypesTablePage'
 
 export const router = createBrowserRouter([
   // Rutas públicas (login, registro, etc.)
@@ -34,6 +36,10 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
+            element: <DashboardPage />,
+          },
+          {
+            path: 'generations',
             element: <GenerationsPage />,
           },
           {
@@ -41,12 +47,20 @@ export const router = createBrowserRouter([
             element: <GenerationDetailsPage />,
           },
           {
-            path: 'pokedex',
+            path: 'generation',
             element: <PokedexPage />,
+          },
+          {
+            path: 'generation/:name',
+            element: <PokemonDetailsPage />,
           },
           {
             path: 'pokemon/:id',
             element: <PokemonDetailsPage />,
+          },
+          {
+            path: 'types',
+            element: <TypesTablePage />,
           },
         ],
       },

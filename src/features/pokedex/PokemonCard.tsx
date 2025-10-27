@@ -39,7 +39,7 @@ export default function PokemonCard({ pokemon }: PokemonCardProps) {
   const capitalizedName = pokemon.name.charAt(0).toUpperCase() + pokemon.name.slice(1)
 
   return (
-    <Link to={`/pokedex/${pokemon.name}`} className="group">
+    <Link to={`/generation/${pokemon.name}`} className="group">
       <Card className="transition-all duration-200 hover:shadow-xl hover:scale-105 group-hover:shadow-theme-primary/20">
         <CardContent className="p-4">
           {/* Imagen del Pokemon */}

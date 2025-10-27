@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useTheme } from '@/shared/theme/useTheme'
 import { Logo } from '@/shared/brand/Logo'
@@ -7,6 +7,7 @@ import { Button } from '@/shared/components/ui/button'
 export default function MainLayout() {
   const { logout } = useAuth()
   const { theme, toggle } = useTheme()
+  const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
@@ -20,7 +21,12 @@ export default function MainLayout() {
           <div className="flex h-16 items-center justify-between">
             {/* Logo */}
             <div className="flex items-center space-x-4">
-              <Logo variant="full" className="h-8" withBackground />
+              <button 
+                onClick={() => navigate('/')}
+                className="focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] rounded-lg"
+              >
+                <Logo variant="full" className="h-8" withBackground />
+              </button>
             </div>
 
             {/* Controles */}
