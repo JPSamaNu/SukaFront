@@ -25,10 +25,20 @@ export default function AllPokemonPage() {
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [totalCount, setTotalCount] = useState(0)
   const navigate = useNavigate()
   const observerRef = useRef<IntersectionObserver | null>(null)
   const lastPokemonRef = useRef<HTMLDivElement>(null)
+  const searchTimeoutRef = useRef<number | null>(null)
+
+  // Lista de todos los tipos de Pokémon
+  const pokemonTypes = [
+    'normal', 'fire', 'water', 'electric', 'grass', 'ice',
+    'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
+    'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
+  ]
 
   // Colores de tipos de Pokémon
   const typeColors: Record<string, string> = {
@@ -53,15 +63,14 @@ export default function AllPokemonPage() {
   }
 
   // Cargar Pokémon
-  const loadPokemon = useCallback(async (pageNum: number, searchTerm: string = '') => {
-    if (loading) return
-
+  const loadPokemon = useCallback(async (pageNum: number, searchTerm: string = '', typeFilters: string[] = []) => {
     try {
       setLoading(true)
       const response = await pokemonApi.getAll({
         page: pageNum,
         limit: 100, // Máximo permitido por el backend
         search: searchTerm || undefined,
+        type: typeFilters.length > 0 ? typeFilters.join(',') : undefined,
         sortBy: 'id',
         sortOrder: 'ASC',
       })
@@ -80,11 +89,30 @@ export default function AllPokemonPage() {
     } finally {
       setLoading(false)
     }
-  }, [loading])
+  }, [])
 
-  // Cargar página inicial
+  // Cargar página inicial cuando cambian los filtros
   useEffect(() => {
-    loadPokemon(1, search)
+    loadPokemon(1, debouncedSearch, selectedTypes)
+    setPage(1)
+    setPokemon([])
+  }, [debouncedSearch, selectedTypes])
+
+  // Debounce para el buscador (espera 500ms después de que el usuario deje de escribir)
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current)
+    }
+
+    searchTimeoutRef.current = window.setTimeout(() => {
+      setDebouncedSearch(search)
+    }, 500)
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current)
+      }
+    }
   }, [search])
 
   // Infinite scroll observer
@@ -110,10 +138,10 @@ export default function AllPokemonPage() {
 
   // Cargar siguiente página
   useEffect(() => {
-    if (page > 1) {
-      loadPokemon(page, search)
+    if (page > 1 && !loading) {
+      loadPokemon(page, debouncedSearch, selectedTypes)
     }
-  }, [page])
+  }, [page, debouncedSearch, selectedTypes, loadPokemon])
 
   const handlePokemonClick = (pokemonId: number) => {
     navigate(`/pokemon/${pokemonId}`)
@@ -121,8 +149,19 @@ export default function AllPokemonPage() {
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value)
-    setPage(1)
-    setPokemon([])
+    // El debounce se encargará de actualizar debouncedSearch y disparar la búsqueda
+  }
+
+  const handleTypeChange = (type: string) => {
+    setSelectedTypes(prev => {
+      if (prev.includes(type)) {
+        // Si ya está seleccionado, lo quitamos
+        return prev.filter(t => t !== type)
+      } else {
+        // Si no está seleccionado, lo agregamos
+        return [...prev, type]
+      }
+    })
   }
 
   return (
@@ -139,13 +178,67 @@ export default function AllPokemonPage() {
 
         {/* Buscador */}
         <div className="max-w-md mx-auto mb-8">
-          <Input
-            type="text"
-            placeholder="🔍 Buscar Pokémon por nombre..."
-            value={search}
-            onChange={handleSearchChange}
-            className="w-full"
-          />
+          <div className="relative">
+            <Input
+              type="text"
+              placeholder="🔍 Buscar Pokémon por nombre..."
+              value={search}
+              onChange={handleSearchChange}
+              className="w-full pr-10"
+            />
+            {/* Indicador de búsqueda activa */}
+            {search !== debouncedSearch && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+              </div>
+            )}
+          </div>
+          {search && (
+            <p className="text-xs text-[color:var(--muted)] mt-2 text-center">
+              {search !== debouncedSearch 
+                ? 'Escribiendo...' 
+                : loading 
+                  ? 'Buscando...' 
+                  : `${pokemon.length} resultado${pokemon.length !== 1 ? 's' : ''} encontrado${pokemon.length !== 1 ? 's' : ''}`
+              }
+            </p>
+          )}
+        </div>
+
+        {/* Filtro por Tipo */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <h3 className="text-center text-sm font-semibold text-[color:var(--muted)] mb-3">
+            Filtrar por Tipo {selectedTypes.length > 0 && `(${selectedTypes.length} seleccionado${selectedTypes.length !== 1 ? 's' : ''})`}
+          </h3>
+          <div className="flex flex-wrap justify-center gap-2">
+            {pokemonTypes.map(type => (
+              <button
+                key={type}
+                onClick={() => handleTypeChange(type)}
+                className={`
+                  px-4 py-2 rounded-lg font-semibold text-white text-sm
+                  transition-all duration-200 transform hover:scale-105
+                  ${typeColors[type] || 'bg-gray-400'}
+                  ${selectedTypes.includes(type)
+                    ? 'ring-4 ring-yellow-400 scale-110' 
+                    : 'opacity-60 hover:opacity-100'
+                  }
+                `}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
+          </div>
+          {selectedTypes.length > 0 && (
+            <div className="text-center mt-3">
+              <button
+                onClick={() => setSelectedTypes([])}
+                className="text-sm text-[color:var(--muted)] hover:text-[color:var(--text)] underline"
+              >
+                ✕ Limpiar filtros
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

@@ -12,6 +12,7 @@ export default function PokemonDetailsPage() {
   const [pokemon, setPokemon] = useState<Pokemon | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false)
 
   useEffect(() => {
     const fetchPokemon = async () => {
@@ -70,6 +71,30 @@ export default function PokemonDetailsPage() {
       'speed': 'Velocidad',
     }
     return names[statName] || statName
+  }
+
+  const getStatColor = (value: number) => {
+    // Gradiente de color basado en el valor de la estadística
+    // Retorna un gradiente CSS que va de azul a rojo
+    const percentage = Math.min((value / 150) * 100, 100)
+    
+    // Crear un gradiente que cambia según el porcentaje
+    if (percentage <= 20) {
+      // Muy bajo: azul
+      return 'bg-gradient-to-r from-blue-400 to-blue-500'
+    } else if (percentage <= 40) {
+      // Bajo: azul a verde
+      return 'bg-gradient-to-r from-blue-500 to-green-500'
+    } else if (percentage <= 60) {
+      // Medio: verde a amarillo
+      return 'bg-gradient-to-r from-green-500 to-yellow-500'
+    } else if (percentage <= 80) {
+      // Alto: amarillo a naranja
+      return 'bg-gradient-to-r from-yellow-500 to-orange-500'
+    } else {
+      // Muy alto: naranja a rojo
+      return 'bg-gradient-to-r from-orange-500 to-red-500'
+    }
   }
 
   if (loading) {
@@ -140,13 +165,26 @@ export default function PokemonDetailsPage() {
           <CardContent className="p-6">
             <div className="text-center space-y-4">
               {/* Imagen principal */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8">
+              <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8">
                 {mainImage ? (
-                  <img
-                    src={mainImage}
-                    alt={pokemon.name}
-                    className="w-full max-w-sm mx-auto"
-                  />
+                  <>
+                    <img
+                      src={mainImage}
+                      alt={pokemon.name}
+                      className="w-full max-w-sm mx-auto cursor-pointer transition-transform hover:scale-105"
+                      onClick={() => setIsImageModalOpen(true)}
+                    />
+                    {/* Botón para expandir imagen */}
+                    <button
+                      onClick={() => setIsImageModalOpen(true)}
+                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
+                      title="Ver en grande"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" />
+                      </svg>
+                    </button>
+                  </>
                 ) : (
                   <div className="w-64 h-64 mx-auto bg-theme-muted rounded-xl flex items-center justify-center">
                     <span className="text-4xl">?</span>
@@ -155,7 +193,7 @@ export default function PokemonDetailsPage() {
               </div>
 
               {/* Tipos */}
-              <div className="flex justify-center space-x-2">
+              <div className="flex justify-center gap-3">
                 {pokemon.types && pokemon.types.length > 0 && pokemon.types.map((type, index) => {
                   // Manejar ambos formatos: string o {name: string, slot: number}
                   const typeName = typeof type === 'string' ? type : type?.name
@@ -163,9 +201,9 @@ export default function PokemonDetailsPage() {
                   return (
                     <span
                       key={index}
-                      className={`px-3 py-1 rounded-full text-white text-sm font-medium ${getTypeColor(typeName)}`}
+                      className={`min-w-[120px] px-5 py-2.5 rounded-full text-white text-base font-bold uppercase text-center inline-block ${getTypeColor(typeName)}`}
                     >
-                      {typeName.charAt(0).toUpperCase() + typeName.slice(1)}
+                      {typeName}
                     </span>
                   )
                 })}
@@ -210,7 +248,7 @@ export default function PokemonDetailsPage() {
                     </div>
                     <div className="w-full bg-theme-muted rounded-full h-2">
                       <div
-                        className="bg-pokedex-red h-2 rounded-full transition-all duration-500"
+                        className={`${getStatColor(baseStat)} h-2 rounded-full transition-all duration-500`}
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
@@ -231,6 +269,45 @@ export default function PokemonDetailsPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de imagen en grande */}
+      {isImageModalOpen && mainImage && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setIsImageModalOpen(false)}
+        >
+          {/* Fondo semi-transparente oscuro */}
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+          
+          {/* Contenedor de la imagen */}
+          <div className="relative z-10 max-w-full max-h-full">
+            <img
+              src={mainImage}
+              alt={pokemon.name}
+              className="max-w-full max-h-[90vh] object-contain drop-shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+            
+            {/* Botón de cerrar */}
+            <button
+              onClick={() => setIsImageModalOpen(false)}
+              className="absolute top-4 right-4 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
+              title="Cerrar"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            {/* Nombre del Pokémon */}
+            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/70 text-white px-6 py-3 rounded-full">
+              <span className="text-lg font-bold">
+                #{pokemonNumber} {capitalizedName}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
