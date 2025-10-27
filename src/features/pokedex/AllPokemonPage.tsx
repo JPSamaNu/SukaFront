@@ -32,6 +32,7 @@ export default function AllPokemonPage() {
   const observerRef = useRef<IntersectionObserver | null>(null)
   const lastPokemonRef = useRef<HTMLDivElement>(null)
   const searchTimeoutRef = useRef<number | null>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Lista de todos los tipos de Pokémon
   const pokemonTypes = [
@@ -62,32 +63,49 @@ export default function AllPokemonPage() {
     fairy: 'bg-pink-400',
   }
 
-  // Cargar Pokémon
+  // Cargar Pokémon con cancelación de peticiones anteriores
   const loadPokemon = useCallback(async (pageNum: number, searchTerm: string = '', typeFilters: string[] = []) => {
+    // Cancelar petición anterior si existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Crear nuevo AbortController para esta petición
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
     try {
       setLoading(true)
       const response = await pokemonApi.getAll({
         page: pageNum,
-        limit: 100, // Máximo permitido por el backend
+        limit: 100,
         search: searchTerm || undefined,
         type: typeFilters.length > 0 ? typeFilters.join(',') : undefined,
         sortBy: 'id',
         sortOrder: 'ASC',
       })
 
-      setTotalCount(response.total)
+      // Solo actualizar si no fue cancelada
+      if (!abortController.signal.aborted) {
+        setTotalCount(response.total)
 
-      if (pageNum === 1) {
-        setPokemon(response.data)
-      } else {
-        setPokemon(prev => [...prev, ...response.data])
+        if (pageNum === 1) {
+          setPokemon(response.data)
+        } else {
+          setPokemon(prev => [...prev, ...response.data])
+        }
+
+        setHasMore(pageNum < response.totalPages)
       }
-
-      setHasMore(pageNum < response.totalPages)
-    } catch (error) {
-      console.error('Error cargando Pokémon:', error)
+    } catch (error: any) {
+      // Ignorar errores de cancelación
+      if (error.name !== 'AbortError' && !abortController.signal.aborted) {
+        console.error('Error cargando Pokémon:', error)
+      }
     } finally {
-      setLoading(false)
+      if (!abortController.signal.aborted) {
+        setLoading(false)
+      }
     }
   }, [])
 
@@ -96,7 +114,7 @@ export default function AllPokemonPage() {
     loadPokemon(1, debouncedSearch, selectedTypes)
     setPage(1)
     setPokemon([])
-  }, [debouncedSearch, selectedTypes])
+  }, [debouncedSearch, selectedTypes, loadPokemon])
 
   // Debounce para el buscador (espera 500ms después de que el usuario deje de escribir)
   useEffect(() => {
@@ -158,7 +176,12 @@ export default function AllPokemonPage() {
         // Si ya está seleccionado, lo quitamos
         return prev.filter(t => t !== type)
       } else {
-        // Si no está seleccionado, lo agregamos
+        // Si no está seleccionado, verificar límite de 2 tipos
+        if (prev.length >= 2) {
+          // Ya hay 2 tipos seleccionados, no permitir más
+          return prev
+        }
+        // Si hay menos de 2, agregar el nuevo tipo
         return [...prev, type]
       }
     })
@@ -208,26 +231,39 @@ export default function AllPokemonPage() {
         {/* Filtro por Tipo */}
         <div className="max-w-4xl mx-auto mb-8">
           <h3 className="text-center text-sm font-semibold text-[color:var(--muted)] mb-3">
-            Filtrar por Tipo {selectedTypes.length > 0 && `(${selectedTypes.length} seleccionado${selectedTypes.length !== 1 ? 's' : ''})`}
+            Filtrar por Tipo {selectedTypes.length > 0 && `(${selectedTypes.length}/2 seleccionado${selectedTypes.length !== 1 ? 's' : ''})`}
           </h3>
+          {selectedTypes.length >= 2 && (
+            <p className="text-center text-xs text-yellow-600 mb-2">
+              ⚠️ Máximo 2 tipos. Deselecciona uno para cambiar.
+            </p>
+          )}
           <div className="flex flex-wrap justify-center gap-2">
-            {pokemonTypes.map(type => (
-              <button
-                key={type}
-                onClick={() => handleTypeChange(type)}
-                className={`
-                  px-4 py-2 rounded-lg font-semibold text-white text-sm
-                  transition-all duration-200 transform hover:scale-105
-                  ${typeColors[type] || 'bg-gray-400'}
-                  ${selectedTypes.includes(type)
-                    ? 'ring-4 ring-yellow-400 scale-110' 
-                    : 'opacity-60 hover:opacity-100'
-                  }
-                `}
-              >
-                {type.charAt(0).toUpperCase() + type.slice(1)}
-              </button>
-            ))}
+            {pokemonTypes.map(type => {
+              const isSelected = selectedTypes.includes(type)
+              const isDisabled = !isSelected && selectedTypes.length >= 2
+              
+              return (
+                <button
+                  key={type}
+                  onClick={() => handleTypeChange(type)}
+                  disabled={isDisabled}
+                  className={`
+                    px-4 py-2 rounded-lg font-semibold text-white text-sm
+                    transition-all duration-200 transform
+                    ${typeColors[type] || 'bg-gray-400'}
+                    ${isSelected
+                      ? 'ring-4 ring-yellow-400 scale-110' 
+                      : isDisabled
+                        ? 'opacity-30 cursor-not-allowed'
+                        : 'opacity-60 hover:opacity-100 hover:scale-105'
+                    }
+                  `}
+                >
+                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                </button>
+              )
+            })}
           </div>
           {selectedTypes.length > 0 && (
             <div className="text-center mt-3">
@@ -320,17 +356,64 @@ export default function AllPokemonPage() {
       )}
 
       {/* Sin resultados */}
-      {!loading && pokemon.length === 0 && search && (
+      {!loading && pokemon.length === 0 && (search || selectedTypes.length > 0) && (
         <div className="text-center py-12">
-          <p className="text-[color:var(--muted)] text-lg mb-4">
-            No se encontraron Pokémon para "{search}"
+          <div className="text-6xl mb-4">🔍</div>
+          <p className="text-[color:var(--text)] text-xl font-semibold mb-2">
+            No se encontraron Pokémon
           </p>
-          <button
-            onClick={() => setSearch('')}
-            className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-lg hover:opacity-90 transition-opacity"
-          >
-            Ver todos los Pokémon
-          </button>
+          <p className="text-[color:var(--muted)] text-lg mb-4">
+            {search && selectedTypes.length === 0 && (
+              <>No hay resultados para "<span className="font-semibold">{search}</span>"</>
+            )}
+            {!search && selectedTypes.length === 1 && (
+              <>No hay Pokémon de tipo <span className="font-semibold capitalize">{selectedTypes[0]}</span></>
+            )}
+            {!search && selectedTypes.length === 2 && (
+              <>
+                No hay Pokémon con los tipos{' '}
+                <span className="font-semibold capitalize">{selectedTypes[0]}</span>
+                {' y '}
+                <span className="font-semibold capitalize">{selectedTypes[1]}</span>
+              </>
+            )}
+            {search && selectedTypes.length > 0 && (
+              <>
+                No hay resultados para "<span className="font-semibold">{search}</span>" 
+                con {selectedTypes.length === 1 ? 'tipo' : 'tipos'}{' '}
+                <span className="font-semibold capitalize">{selectedTypes.join(', ')}</span>
+              </>
+            )}
+          </p>
+          <div className="flex gap-3 justify-center">
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Limpiar búsqueda
+              </button>
+            )}
+            {selectedTypes.length > 0 && (
+              <button
+                onClick={() => setSelectedTypes([])}
+                className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-lg hover:opacity-90 transition-opacity"
+              >
+                Limpiar filtros de tipo
+              </button>
+            )}
+            {(search || selectedTypes.length > 0) && (
+              <button
+                onClick={() => {
+                  setSearch('')
+                  setSelectedTypes([])
+                }}
+                className="px-4 py-2 border-2 border-[color:var(--btn-bg)] text-[color:var(--btn-bg)] rounded-lg hover:bg-[color:var(--btn-bg)] hover:text-[color:var(--btn-fg)] transition-all"
+              >
+                Ver todos los Pokémon
+              </button>
+            )}
+          </div>
         </div>
       )}
 

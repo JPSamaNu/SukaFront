@@ -80,10 +80,47 @@ export const pokemonApi = {
   },
 
   /**
+   * Obtener cadena de evolución de un Pokémon
+   */
+  async getEvolutionChain(id: number | string): Promise<{
+    evolvesFrom: {
+      id: number
+      name: string
+      sprite: string
+      requirements: string
+    } | null
+    evolvesTo: Array<{
+      id: number
+      name: string
+      sprite: string
+      requirements: string
+    }>
+  }> {
+    // Intentar obtener del caché primero
+    const cacheKey = `pokemon_evolution_${id}`
+    const cached = cache.get<any>(cacheKey)
+    
+    if (cached) {
+      console.log(`📦 Evolución de Pokémon #${id} cargada desde caché`)
+      return cached
+    }
+
+    // Si no está en caché, hacer la petición
+    console.log(`🌐 Cargando evolución de Pokémon #${id} desde API`)
+    const response = await api.get(`/pokemon/${id}/evolution`)
+    
+    // Guardar en caché por 24 horas (las evoluciones no cambian)
+    cache.set(cacheKey, response.data, 24 * 60 * 60 * 1000)
+    
+    return response.data
+  },
+
+  /**
    * Limpiar caché de un Pokémon específico
    */
   clearCache(id: number | string): void {
     cache.remove(`pokemon_${id}`)
+    cache.remove(`pokemon_evolution_${id}`)
     console.log(`🗑️ Caché del Pokémon #${id} limpiado`)
   },
 
