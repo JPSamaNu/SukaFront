@@ -1,9 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pokemonApi } from '@/shared/api/pokemon.api'
-import { Card } from '@/shared/components/ui/card'
-import { Skeleton } from '@/shared/components/ui/skeleton'
-import { Input } from '@/shared/components/ui/input'
 
 interface PokemonItem {
   id: number
@@ -21,18 +18,23 @@ interface PokemonItem {
 
 export default function AllPokemonPage() {
   const [pokemon, setPokemon] = useState<PokemonItem[]>([])
-  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [totalCount, setTotalCount] = useState(0)
+  const [bufferReady, setBufferReady] = useState(false) // Nuevo estado
   const navigate = useNavigate()
   const observerRef = useRef<IntersectionObserver | null>(null)
-  const lastPokemonRef = useRef<HTMLDivElement>(null)
+  const lastPokemonRef = useRef<HTMLDivElement | null>(null)
   const searchTimeoutRef = useRef<number | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  
+  // Buffer de Pokémon cargados en segundo plano (sistema de carga invisible)
+  const pokemonBufferRef = useRef<PokemonItem[]>([])
+  const isLoadingBufferRef = useRef(false)
+  const nextPageToLoadRef = useRef(1)
 
   // Lista de todos los tipos de Pokémon
   const pokemonTypes = [
@@ -63,7 +65,59 @@ export default function AllPokemonPage() {
     fairy: 'bg-pink-400',
   }
 
-  // Cargar Pokémon con cancelación de peticiones anteriores
+  // Función para cargar en segundo plano (buffer invisible)
+  const loadPokemonBuffer = useCallback(async (startPage: number, endPage: number, searchTerm: string = '', typeFilters: string[] = []) => {
+    if (isLoadingBufferRef.current) return
+    
+    isLoadingBufferRef.current = true
+
+    try {
+      console.log(`🔄 Cargando páginas ${startPage}-${endPage} en buffer...`)
+      
+      // Cargar todas las páginas en paralelo
+      const promises = []
+      for (let page = startPage; page <= endPage; page++) {
+        promises.push(
+          pokemonApi.getAll({
+            page,
+            limit: 50,
+            search: searchTerm || undefined,
+            type: typeFilters.length > 0 ? typeFilters.join(',') : undefined,
+            sortBy: 'id',
+            sortOrder: 'ASC',
+          })
+        )
+      }
+
+      const responses = await Promise.all(promises)
+      
+      // Combinar todos los resultados en orden
+      const allData: PokemonItem[] = []
+      responses.forEach(response => {
+        if (response.data && response.data.length > 0) {
+          allData.push(...response.data)
+        }
+      })
+
+      // Filtrar los primeros 10 que ya están visibles (si página 1 está incluida)
+      const bufferData = startPage === 1 ? allData.slice(10) : allData
+      
+      // Reemplazar el buffer completo (no agregar)
+      pokemonBufferRef.current = bufferData
+      
+      console.log(`✅ Buffer listo: ${bufferData.length} Pokémon disponibles`)
+      
+      // TRIGGER: Notificar que el buffer está listo
+      setBufferReady(true)
+      
+    } catch (error) {
+      console.error('Error cargando buffer:', error)
+    } finally {
+      isLoadingBufferRef.current = false
+    }
+  }, [])
+
+  // Cargar Pokémon visibles (solo primeros 10, muestra inmediatamente)
   const loadPokemon = useCallback(async (pageNum: number, searchTerm: string = '', typeFilters: string[] = []) => {
     // Cancelar petición anterior si existe
     if (abortControllerRef.current) {
@@ -75,30 +129,62 @@ export default function AllPokemonPage() {
     abortControllerRef.current = abortController
 
     try {
-      setLoading(true)
-      const response = await pokemonApi.getAll({
-        page: pageNum,
-        limit: 100,
+      if (pageNum === 1) {
+        setLoading(true)
+        setPokemon([]) // Limpiar lista
+        pokemonBufferRef.current = [] // Limpiar buffer
+        nextPageToLoadRef.current = 1
+      }
+
+      // PASO 1: Cargar solo los primeros 10 Pokémon (visual inmediato)
+      const initialResponse = await pokemonApi.getAll({
+        page: 1,
+        limit: 10,
         search: searchTerm || undefined,
         type: typeFilters.length > 0 ? typeFilters.join(',') : undefined,
         sortBy: 'id',
         sortOrder: 'ASC',
       })
 
-      // Solo actualizar si no fue cancelada
       if (!abortController.signal.aborted) {
-        setTotalCount(response.total)
+        setPokemon(initialResponse.data)
+        setTotalCount(initialResponse.total)
+        setHasMore(initialResponse.total > 10)
+        setLoading(false)
 
-        if (pageNum === 1) {
-          setPokemon(response.data)
-        } else {
-          setPokemon(prev => [...prev, ...response.data])
+        console.log(`📊 Total: ${initialResponse.total} Pokémon | Mostrando: 10 iniciales`)
+        
+        // Cargar TODO en el buffer de inmediato en paralelo
+        if (initialResponse.total > 10) {
+          setTimeout(async () => {
+            const totalPages = Math.ceil(initialResponse.total / 50)
+            // Cargar TODAS las páginas de una vez (incluida la página 1 completa)
+            await loadPokemonBuffer(1, totalPages, searchTerm, typeFilters)
+            
+            // FORZAR display inmediato después de cargar el buffer
+            console.log(`🎯 FORZANDO AUTO-DISPLAY MANUAL`)
+            setTimeout(() => {
+              if (pokemonBufferRef.current.length > 0) {
+                const BATCH = 50
+                const batch = pokemonBufferRef.current.slice(0, BATCH)
+                pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH)
+                
+                setPokemon(prev => {
+                  const ids = new Set(prev.map(p => p.id))
+                  const unique = batch.filter(p => !ids.has(p.id))
+                  console.log(`💥 DISPLAY FORZADO: ${prev.length} + ${unique.length}`)
+                  return [...prev, ...unique]
+                })
+                
+                // Mantener hasMore en true si todavía hay buffer
+                setHasMore(pokemonBufferRef.current.length > 0)
+                console.log(`✓ hasMore=${pokemonBufferRef.current.length > 0}, buffer restante: ${pokemonBufferRef.current.length}`)
+              }
+            }, 500)
+          }, 100)
         }
-
-        setHasMore(pageNum < response.totalPages)
       }
     } catch (error: any) {
-      // Ignorar errores de cancelación
       if (error.name !== 'AbortError' && !abortController.signal.aborted) {
         console.error('Error cargando Pokémon:', error)
       }
@@ -107,13 +193,71 @@ export default function AllPokemonPage() {
         setLoading(false)
       }
     }
+  }, [loadPokemonBuffer])
+
+  // Mostrar más Pokémon desde el buffer (sin loading visible)
+  const showMoreFromBuffer = useCallback(() => {
+    const BATCH_SIZE = 10 // Mostrar 10 más cada vez
+    
+    if (pokemonBufferRef.current.length > 0) {
+      // Tomar los primeros 10 del buffer
+      const nextBatch = pokemonBufferRef.current.slice(0, BATCH_SIZE)
+      pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH_SIZE)
+      
+      // Agregar solo Pokémon que no existan ya (prevenir duplicados)
+      setPokemon(prev => {
+        const existingIds = new Set(prev.map(p => p.id))
+        const uniqueNewPokemon = nextBatch.filter(p => !existingIds.has(p.id))
+        return [...prev, ...uniqueNewPokemon]
+      })
+      
+      console.log(`✨ Mostrando ${nextBatch.length} más del buffer. Quedan ${pokemonBufferRef.current.length} en buffer`)
+      
+      // Actualizar hasMore cuando el buffer se vacía
+      if (pokemonBufferRef.current.length === 0) {
+        setHasMore(false)
+        console.log(`🎉 ¡Todos los Pokémon cargados!`)
+      }
+    } else {
+      // No hay más en el buffer
+      setHasMore(false)
+      console.log(`� Buffer vacío, no hay más Pokémon`)
+    }
   }, [])
+
+  // Auto-mostrar más Pokémon del buffer cuando esté cargado
+  useEffect(() => {
+    const MIN_VISIBLE = 50
+    
+    if (!loading && pokemon.length > 0 && pokemon.length < MIN_VISIBLE && pokemonBufferRef.current.length > 0) {
+      console.log(`🚀 AUTO-DISPLAY: ${pokemon.length} visibles < ${MIN_VISIBLE}, buffer: ${pokemonBufferRef.current.length}`)
+      
+      const timer = setTimeout(() => {
+        const BATCH_SIZE = 50
+        const nextBatch = pokemonBufferRef.current.slice(0, BATCH_SIZE)
+        pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH_SIZE)
+        
+        console.log(`  � Auto-mostrando ${nextBatch.length} más`)
+        
+        setPokemon(prev => {
+          const existingIds = new Set(prev.map(p => p.id))
+          const uniqueNewPokemon = nextBatch.filter(p => !existingIds.has(p.id))
+          console.log(`  ✅ Agregados ${uniqueNewPokemon.length} únicos`)
+          return [...prev, ...uniqueNewPokemon]
+        })
+        
+        if (pokemonBufferRef.current.length === 0) {
+          setHasMore(false)
+        }
+      }, 500) // Delay más largo para dar tiempo al buffer
+      
+      return () => clearTimeout(timer)
+    }
+  }, [pokemon.length, loading])
 
   // Cargar página inicial cuando cambian los filtros
   useEffect(() => {
     loadPokemon(1, debouncedSearch, selectedTypes)
-    setPage(1)
-    setPokemon([])
   }, [debouncedSearch, selectedTypes, loadPokemon])
 
   // Debounce para el buscador (espera 500ms después de que el usuario deje de escribir)
@@ -133,33 +277,57 @@ export default function AllPokemonPage() {
     }
   }, [search])
 
-  // Infinite scroll observer
+  // Infinite scroll observer con sistema de buffer (sin loading visible)
   useEffect(() => {
-    if (loading || !hasMore) return
+    if (loading) return
 
     if (observerRef.current) observerRef.current.disconnect()
 
-    observerRef.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !loading) {
-        setPage(prev => prev + 1)
+    observerRef.current = new IntersectionObserver(
+      entries => {
+        const hasBuffer = pokemonBufferRef.current.length > 0
+        console.log(`👁️ Observer: intersecting=${entries[0].isIntersecting}, buffer=${pokemonBufferRef.current.length}, loading=${loading}`)
+        
+        // CAMBIO: Verificar buffer directamente, no hasMore
+        if (entries[0].isIntersecting && hasBuffer && !loading) {
+          console.log(`  🎯 Trigger! Mostrando más...`)
+          
+          const BATCH_SIZE = 50
+          const nextBatch = pokemonBufferRef.current.slice(0, BATCH_SIZE)
+          pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH_SIZE)
+          
+          console.log(`  📦 Tomando ${nextBatch.length} del buffer`)
+          
+          setPokemon(prev => {
+            const existingIds = new Set(prev.map(p => p.id))
+            const uniqueNewPokemon = nextBatch.filter(p => !existingIds.has(p.id))
+            console.log(`  ✅ Agregando ${uniqueNewPokemon.length} únicos (total: ${prev.length + uniqueNewPokemon.length})`)
+            return [...prev, ...uniqueNewPokemon]
+          })
+          
+          // Actualizar hasMore basado en buffer restante
+          const stillHasMore = pokemonBufferRef.current.length > 0
+          setHasMore(stillHasMore)
+          console.log(`  ℹ️ hasMore=${stillHasMore}, buffer restante: ${pokemonBufferRef.current.length}`)
+        }
+      },
+      {
+        rootMargin: '800px',
+        threshold: 0.1,
       }
-    })
+    )
 
     if (lastPokemonRef.current) {
       observerRef.current.observe(lastPokemonRef.current)
+      console.log(`👀 Observer ACTIVADO - Visibles: ${pokemon.length}, Buffer: ${pokemonBufferRef.current.length}`)
+    } else {
+      console.log(`⚠️ lastPokemonRef.current es null!`)
     }
 
     return () => {
       if (observerRef.current) observerRef.current.disconnect()
     }
-  }, [loading, hasMore])
-
-  // Cargar siguiente página
-  useEffect(() => {
-    if (page > 1 && !loading) {
-      loadPokemon(page, debouncedSearch, selectedTypes)
-    }
-  }, [page, debouncedSearch, selectedTypes, loadPokemon])
+  }, [pokemon.length, hasMore, loading])
 
   const handlePokemonClick = (pokemonId: number) => {
     navigate(`/pokemon/${pokemonId}`)
@@ -202,12 +370,12 @@ export default function AllPokemonPage() {
         {/* Buscador */}
         <div className="max-w-md mx-auto mb-8">
           <div className="relative">
-            <Input
+            <input
               type="text"
               placeholder="🔍 Buscar Pokémon por nombre..."
               value={search}
               onChange={handleSearchChange}
-              className="w-full pr-10"
+              className="w-full px-4 py-2 pr-10 rounded-lg border border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
             />
             {/* Indicador de búsqueda activa */}
             {search !== debouncedSearch && (
@@ -290,60 +458,59 @@ export default function AllPokemonPage() {
             <div
               key={poke.id}
               ref={isLast ? lastPokemonRef : null}
+              className="pokemon-item cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-2 border-[color:var(--border)] hover:border-[color:var(--btn-bg)] rounded-lg overflow-hidden bg-[color:var(--card)]"
+              onClick={() => handlePokemonClick(poke.id)}
             >
-              <Card
-                className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-2 hover:border-[color:var(--btn-bg)]"
-                onClick={() => handlePokemonClick(poke.id)}
-              >
-                <div className="p-4">
-                  <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
-                    <img
-                      src={imageUrl}
-                      alt={poke.name}
-                      className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.currentTarget.src = '/placeholder-pokemon.png'
-                      }}
-                    />
-                  </div>
+              <div className="p-4">
+                <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                  <img
+                    src={imageUrl}
+                    alt={poke.name}
+                    className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
+                    loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = '/placeholder-pokemon.png'
+                    }}
+                  />
+                </div>
 
-                  <div className="text-center">
-                    <p className="text-xs text-gray-500 font-semibold mb-1">
-                      N° {poke.id.toString().padStart(4, '0')}
-                    </p>
-                    <h3 className="font-bold text-gray-800 capitalize mb-2 truncate">
-                      {poke.name}
-                    </h3>
+                <div className="text-center">
+                  <p className="text-xs text-gray-500 font-semibold mb-1">
+                    N° {poke.id.toString().padStart(4, '0')}
+                  </p>
+                  <h3 className="font-bold text-gray-800 capitalize mb-2 truncate">
+                    {poke.name}
+                  </h3>
 
-                    <div className="flex gap-1 justify-center flex-wrap">
-                      {poke.types && poke.types.map((type, index) => {
-                        const typeName = typeof type === 'string' ? type : type?.name
-                        // Validar que el tipo tenga nombre
-                        if (!typeName) return null
-                        return (
-                          <span
-                            key={`${typeName}-${index}`}
-                            className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
-                              typeColors[typeName.toLowerCase()] || 'bg-gray-400'
-                            }`}
-                          >
-                            {typeName}
-                          </span>
-                        )
-                      })}
-                    </div>
+                  <div className="flex gap-1 justify-center flex-wrap">
+                    {poke.types && poke.types.map((type, index) => {
+                      const typeName = typeof type === 'string' ? type : type?.name
+                      // Validar que el tipo tenga nombre
+                      if (!typeName) return null
+                      return (
+                        <span
+                          key={`${typeName}-${index}`}
+                          className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
+                            typeColors[typeName.toLowerCase()] || 'bg-gray-400'
+                          }`}
+                        >
+                          {typeName}
+                        </span>
+                      )
+                    })}
                   </div>
                 </div>
-              </Card>
+              </div>
             </div>
           )
         })}
 
-        {/* Loading skeletons */}
-        {loading && [...Array(20)].map((_, i) => (
-          <Skeleton key={`skeleton-${i}`} className="h-64 w-full" />
-        ))}
+        {/* Loading inicial solo (sin skeletons visibles después)  */}
+        {loading && pokemon.length === 0 && (
+          <div className="col-span-full flex justify-center items-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--primary)]"></div>
+          </div>
+        )}
       </div>
 
       {/* No hay más resultados */}

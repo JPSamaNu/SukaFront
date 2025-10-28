@@ -27,6 +27,34 @@ export default function MainLayout() {
               >
                 <Logo variant="full" className="h-8" withBackground />
               </button>
+              
+              {/* Navegación */}
+              <nav className="hidden md:flex items-center space-x-2 ml-8">
+                <button
+                  onClick={() => navigate('/')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[color:var(--text)] hover:bg-[color:var(--surface-2)] transition-colors"
+                >
+                  Pokédex
+                </button>
+                <button
+                  onClick={() => navigate('/moves')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[color:var(--text)] hover:bg-[color:var(--surface-2)] transition-colors"
+                >
+                  Movimientos
+                </button>
+                <button
+                  onClick={() => navigate('/items')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[color:var(--text)] hover:bg-[color:var(--surface-2)] transition-colors"
+                >
+                  Items
+                </button>
+                <button
+                  onClick={() => navigate('/berries')}
+                  className="px-4 py-2 rounded-lg text-sm font-medium text-[color:var(--text)] hover:bg-[color:var(--surface-2)] transition-colors"
+                >
+                  Berries
+                </button>
+              </nav>
             </div>
 
             {/* Controles */}
