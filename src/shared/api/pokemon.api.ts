@@ -83,17 +83,13 @@ export const pokemonApi = {
    * Obtener cadena de evolución de un Pokémon
    */
   async getEvolutionChain(id: number | string): Promise<{
-    evolvesFrom: {
+    chain: Array<{
       id: number
       name: string
       sprite: string
-      requirements: string
-    } | null
-    evolvesTo: Array<{
-      id: number
-      name: string
-      sprite: string
-      requirements: string
+      isCurrent: boolean
+      requirements: string | null
+      evolvesTo: any[]
     }>
   }> {
     // Intentar obtener del caché primero
@@ -116,11 +112,107 @@ export const pokemonApi = {
   },
 
   /**
+   * Obtener formas alternativas de un Pokémon (mega evoluciones, formas regionales, etc.)
+   */
+  async getForms(id: number | string): Promise<{
+    megaEvolutions: Array<{
+      pokemonId: number
+      pokemonName: string
+      formId: number
+      formName: string
+      sprite: string
+      isBattleOnly: boolean
+    }>
+    regionalForms: Array<{
+      pokemonId: number
+      pokemonName: string
+      formId: number
+      formName: string
+      sprite: string
+      isBattleOnly: boolean
+    }>
+    otherForms: Array<{
+      pokemonId: number
+      pokemonName: string
+      formId: number
+      formName: string
+      sprite: string
+      isBattleOnly: boolean
+    }>
+    totalForms: number
+  }> {
+    // Intentar obtener del caché primero
+    const cacheKey = `pokemon_forms_${id}`
+    const cached = cache.get<any>(cacheKey)
+    
+    if (cached) {
+      console.log(`📦 Formas de Pokémon #${id} cargadas desde caché`)
+      return cached
+    }
+
+    // Si no está en caché, hacer la petición
+    console.log(`🌐 Cargando formas de Pokémon #${id} desde API`)
+    const response = await api.get(`/pokemon/${id}/forms`)
+    
+    // Guardar en caché por 24 horas (las formas no cambian)
+    cache.set(cacheKey, response.data, 24 * 60 * 60 * 1000)
+    
+    return response.data
+  },
+
+  /**
+   * Obtener ubicaciones de captura de un Pokémon por videojuego
+   */
+  async getLocations(id: number | string): Promise<{
+    pokemon_id: number
+    total_encounters: number
+    versions: Array<{
+      version: string
+      version_id: number
+      version_group: string
+      version_group_id: number
+      generation: string
+      encounters: Array<{
+        location: string
+        location_id: number
+        location_area: string
+        location_area_game_index: number
+        min_level: number
+        max_level: number
+        encounter_method: string
+        encounter_method_id: number
+        rarity: number
+      }>
+    }>
+    message: string
+  }> {
+    // Intentar obtener del caché primero
+    const cacheKey = `pokemon_locations_${id}`
+    const cached = cache.get<any>(cacheKey)
+    
+    if (cached) {
+      console.log(`📦 Ubicaciones de Pokémon #${id} cargadas desde caché`)
+      return cached
+    }
+
+    // Si no está en caché, hacer la petición
+    console.log(`🌐 Cargando ubicaciones de Pokémon #${id} desde API`)
+    const response = await api.get(`/pokemon/${id}/locations`)
+    
+    // Guardar en caché por 24 horas (las ubicaciones no cambian)
+    cache.set(cacheKey, response.data, 24 * 60 * 60 * 1000)
+    
+    return response.data
+  },
+
+  /**
    * Limpiar caché de un Pokémon específico
    */
   clearCache(id: number | string): void {
     cache.remove(`pokemon_${id}`)
     cache.remove(`pokemon_evolution_${id}`)
+    cache.remove(`pokemon_forms_${id}`)
+    cache.remove(`pokemon_locations_${id}`)
     console.log(`🗑️ Caché del Pokémon #${id} limpiado`)
   },
 

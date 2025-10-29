@@ -10,6 +10,9 @@ import GenerationDetailsPage from '@/features/generations/GenerationDetailsPage'
 import AllPokemonPage from '@/features/pokedex/AllPokemonPage'
 import PokemonDetailsPage from '@/features/pokedex/PokemonDetailsPage'
 import TypesTablePage from '@/features/types/TypesTablePage'
+import MovesPage from '@/features/moves/MovesPage'
+import ItemsPage from '@/features/items/ItemsPage'
+import BerriesPage from '@/features/berries/BerriesPage'
 
 export const router = createBrowserRouter([
   // Rutas públicas (login, registro, etc.)
@@ -61,6 +64,18 @@ export const router = createBrowserRouter([
           {
             path: 'types',
             element: <TypesTablePage />,
+          },
+          {
+            path: 'moves',
+            element: <MovesPage />,
+          },
+          {
+            path: 'items',
+            element: <ItemsPage />,
+          },
+          {
+            path: 'berries',
+            element: <BerriesPage />,
           },
         ],
       },
