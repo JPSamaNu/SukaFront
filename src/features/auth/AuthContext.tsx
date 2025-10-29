@@ -39,7 +39,7 @@ interface AuthProviderProps {
 // Provider del contexto de autenticación
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>(() => ({
-    token: getAccessToken(), // Recuperar token de memoria/sessionStorage al inicializar
+    token: getAccessToken(), // Recuperar token de localStorage al inicializar (persiste entre sesiones)
     user: null,
     loading: false,
     isInitialized: false,
