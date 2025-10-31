@@ -1,8 +1,8 @@
 import axios from 'axios'
 import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-// Flag para habilitar sessionStorage como fallback
-const ENABLE_SESSION_FALLBACK = import.meta.env.VITE_ENABLE_SESSION_FALLBACK === 'true'
+// Constante para la clave de localStorage
+const TOKEN_STORAGE_KEY = 'sukadex_auth_token'
 
 // Estado del refresh token
 let isRefreshing = false
@@ -22,33 +22,30 @@ export const api = axios.create({
   timeout: 60000, // 60 segundos para endpoints pesados como generaciones con todos los pokemon
 })
 
-// Token en memoria
+// Token en memoria (cache)
 let accessToken: string | null = null
 
-// Funciones para manejar el token
+// Funciones para manejar el token con persistencia en localStorage
 export const setAccessToken = (token: string | null) => {
   accessToken = token
   
-  // Feature flag: guardar en sessionStorage como fallback
-  if (ENABLE_SESSION_FALLBACK) {
-    if (token) {
-      sessionStorage.setItem('sukafront_token', token)
-    } else {
-      sessionStorage.removeItem('sukafront_token')
-    }
+  // Guardar en localStorage para persistencia entre sesiones
+  if (token) {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token)
+  } else {
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
   }
 }
 
 export const getAccessToken = (): string | null => {
-  // Prioridad: memoria > sessionStorage (si está habilitado)
+  // Prioridad: memoria > localStorage
   if (accessToken) return accessToken
   
-  if (ENABLE_SESSION_FALLBACK) {
-    const sessionToken = sessionStorage.getItem('sukafront_token')
-    if (sessionToken) {
-      accessToken = sessionToken
-      return sessionToken
-    }
+  // Recuperar de localStorage si existe
+  const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY)
+  if (storedToken) {
+    accessToken = storedToken
+    return storedToken
   }
   
   return null

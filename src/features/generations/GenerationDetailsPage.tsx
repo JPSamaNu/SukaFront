@@ -4,6 +4,7 @@ import { generationsApi, type GenerationWithPokemon, type Generation } from '@/s
 import { Card } from '@/shared/components/ui/card'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { Button } from '@/shared/components/ui/button'
+import ErrorPage from '@/shared/components/ErrorPage'
 
 export default function GenerationDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -109,22 +110,11 @@ export default function GenerationDetailsPage() {
 
   if (error || !generation) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Button onClick={() => navigate('/')} variant="outline" className="mb-6">
-          ← Volver
-        </Button>
-        <div className="max-w-md mx-auto text-center">
-          <div className="bg-red-50 border border-red-300 rounded-lg p-6">
-            <p className="text-red-800 font-semibold mb-4">{error || 'Generación no encontrada'}</p>
-            <button
-              onClick={() => id && loadGeneration(parseInt(id))}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Reintentar
-            </button>
-          </div>
-        </div>
-      </div>
+      <ErrorPage
+        title="Error al cargar la generación"
+        message={error || 'No pudimos cargar los Pokémon de esta generación. Por favor, intenta nuevamente.'}
+        showLogout={false}
+      />
     )
   }
 

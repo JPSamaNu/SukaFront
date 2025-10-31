@@ -5,6 +5,8 @@ import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { pokemonApi } from '@/shared/api/pokemon.api'
 import type { Pokemon } from '@/shared/types/pokemon'
+import TypeEffectivenessCard from './TypeEffectivenessCard'
+import ErrorPage from '@/shared/components/ErrorPage'
 
 export default function PokemonDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -326,16 +328,11 @@ export default function PokemonDetailsPage() {
 
   if (error || !pokemon) {
     return (
-      <div className="text-center py-12">
-        <Card className="max-w-md mx-auto">
-          <CardContent className="p-6">
-            <p className="text-red-600 mb-4">{error || 'Pokémon no encontrado'}</p>
-            <Button onClick={() => navigate(-1)}>
-              Volver
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ErrorPage
+        title="Pokémon no encontrado"
+        message={error || 'No pudimos encontrar el Pokémon que buscas. Puede que no exista o que haya ocurrido un error.'}
+        showLogout={false}
+      />
     )
   }
 
@@ -774,6 +771,13 @@ export default function PokemonDetailsPage() {
             )}
           </Card>
         )}
+
+      {/* Efectividad de Tipos */}
+      {pokemon.types && pokemon.types.length > 0 && (
+        <TypeEffectivenessCard 
+          types={pokemon.types.map(t => typeof t === 'string' ? t : t?.name || '')}
+        />
+      )}
 
       {/* Cadena de evolución */}
       {!loadingEvolution && evolutionChain && evolutionChain.chain && evolutionChain.chain.length > 0 && (
