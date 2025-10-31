@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
@@ -9,10 +9,18 @@ import type { Pokemon } from '@/shared/types/pokemon'
 export default function PokemonDetailsPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const location = useLocation()
   const [pokemon, setPokemon] = useState<Pokemon | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isImageModalOpen, setIsImageModalOpen] = useState(false)
+  
+  // Estado de navegación desde GameDetailsPage
+  const gameContext = location.state as { 
+    fromGame?: boolean
+    versionGroupId?: number
+    versionGroupName?: string
+  } | null
   const [evolutionChain, setEvolutionChain] = useState<{
     chain: Array<{
       id: number
@@ -55,6 +63,7 @@ export default function PokemonDetailsPage() {
   } | null>(null)
   const [loadingLocations, setLoadingLocations] = useState(false)
   const [expandedVersions, setExpandedVersions] = useState<Set<string>>(new Set())
+  const [isMovesExpanded, setIsMovesExpanded] = useState(false)
 
   useEffect(() => {
     const fetchPokemon = async () => {
@@ -67,6 +76,8 @@ export default function PokemonDetailsPage() {
         console.log('🎨 Sprites:', data.sprites)
         console.log('📊 Types:', data.types)
         console.log('💪 Stats:', data.stats)
+        console.log('🎯 Moves:', data.moves)
+        console.log('🏆 Classification:', data.classification)
         setPokemon(data)
       } catch (err) {
         console.error('❌ Error fetching pokemon:', err)
@@ -505,6 +516,265 @@ export default function PokemonDetailsPage() {
         </Card>
       </div>
 
+      {/* EVs que otorga */}
+      {pokemon.stats && pokemon.stats.some(s => s.effort > 0) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>EVs al derrotar</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="flex flex-wrap gap-3">
+                {pokemon.stats.filter(s => s.effort > 0).map((stat, index) => (
+                  <div key={index} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-theme-accent">
+                    <span className="font-semibold text-theme-primary">+{stat.effort}</span>
+                    <span className="text-theme-foreground capitalize">
+                      {formatStatName(stat.name)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-theme-muted-foreground mt-4">
+                Puntos de esfuerzo (EVs) que otorga este Pokémon al ser derrotado
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Clasificación */}
+        {pokemon.classification && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Clasificación y Cría</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Columna izquierda */}
+                <div className="space-y-4">
+                  {/* Tipo de Pokémon */}
+                  <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground">Tipo</span>
+                    <div className="flex gap-2">
+                      {pokemon.classification.isLegendary && (
+                        <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-sm font-semibold">
+                          Legendario
+                        </span>
+                      )}
+                      {pokemon.classification.isMythical && (
+                        <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-400 text-sm font-semibold">
+                          Mítico
+                        </span>
+                      )}
+                      {pokemon.classification.isBaby && (
+                        <span className="px-3 py-1 rounded-full bg-pink-500/20 text-pink-600 dark:text-pink-400 text-sm font-semibold">
+                          Bebé
+                        </span>
+                      )}
+                      {!pokemon.classification.isLegendary && !pokemon.classification.isMythical && !pokemon.classification.isBaby && (
+                        <span className="px-3 py-1 rounded-full bg-theme-accent text-theme-foreground text-sm">
+                          Normal
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Ratio de captura */}
+                  <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground">Ratio de captura</span>
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-theme-foreground">{pokemon.classification.captureRate}</span>
+                      <span className="text-sm text-theme-muted-foreground">
+                        ({Math.round((pokemon.classification.captureRate / 255) * 100)}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Felicidad base */}
+                  <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground">Felicidad base</span>
+                    <span className="font-semibold text-theme-foreground">{pokemon.classification.baseHappiness}</span>
+                  </div>
+
+                  {/* Ritmo de crecimiento */}
+                  <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground">Ritmo de crecimiento</span>
+                    <span className="font-semibold text-theme-foreground capitalize">
+                      {pokemon.classification.growthRate?.replace(/-/g, ' ')}
+                    </span>
+                  </div>
+
+                  {/* Color */}
+                  {pokemon.classification.color && (
+                    <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                      <span className="text-theme-muted-foreground">Color</span>
+                      <span className="font-semibold text-theme-foreground capitalize">
+                        {pokemon.classification.color}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Hábitat */}
+                  {pokemon.classification.habitat && (
+                    <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                      <span className="text-theme-muted-foreground">Hábitat</span>
+                      <span className="font-semibold text-theme-foreground capitalize">
+                        {pokemon.classification.habitat?.replace(/-/g, ' ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Columna derecha - Cría */}
+                <div className="space-y-4">
+                  {/* Grupos de huevo */}
+                  <div className="py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground block mb-2">Grupos de huevo</span>
+                    <div className="flex flex-wrap gap-2">
+                      {pokemon.classification.eggGroups?.map((group, idx) => (
+                        <span key={idx} className="px-3 py-1 rounded-full bg-theme-accent text-theme-foreground text-sm capitalize">
+                          {group?.replace(/-/g, ' ')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Pasos para eclosionar */}
+                  <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground">Pasos para eclosionar</span>
+                    <span className="font-semibold text-theme-foreground">
+                      {pokemon.classification.hatchCounter ? (pokemon.classification.hatchCounter * 256).toLocaleString() : 'N/A'}
+                    </span>
+                  </div>
+
+                  {/* Género */}
+                  <div className="py-2 border-b border-theme-border">
+                    <span className="text-theme-muted-foreground block mb-2">Distribución de género</span>
+                    {pokemon.classification.genderRate === -1 ? (
+                      <span className="font-semibold text-theme-foreground">Sin género</span>
+                    ) : (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-3">
+                          <span className="text-blue-600 dark:text-blue-400">♂</span>
+                          <div className="flex-1 bg-theme-muted rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full"
+                              style={{ width: `${((8 - pokemon.classification.genderRate) / 8) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-theme-foreground w-12 text-right">
+                            {((8 - pokemon.classification.genderRate) / 8 * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-pink-600 dark:text-pink-400">♀</span>
+                          <div className="flex-1 bg-theme-muted rounded-full h-2">
+                            <div
+                              className="bg-pink-500 h-2 rounded-full"
+                              style={{ width: `${(pokemon.classification.genderRate / 8) * 100}%` }}
+                            ></div>
+                          </div>
+                          <span className="text-sm font-semibold text-theme-foreground w-12 text-right">
+                            {(pokemon.classification.genderRate / 8 * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Forma */}
+                  {pokemon.classification.shape && (
+                    <div className="flex items-center justify-between py-2 border-b border-theme-border">
+                      <span className="text-theme-muted-foreground">Forma</span>
+                      <span className="font-semibold text-theme-foreground capitalize">
+                        {pokemon.classification.shape?.replace(/-/g, ' ')}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Movimientos por nivel */}
+        {pokemon.moves && pokemon.moves.length > 0 && (
+          <Card>
+            <CardHeader 
+              className="cursor-pointer hover:bg-theme-accent transition-colors"
+              onClick={() => setIsMovesExpanded(!isMovesExpanded)}
+            >
+              <div className="flex items-center justify-between">
+                <CardTitle>Movimientos por nivel ({pokemon.moves.length})</CardTitle>
+                <svg 
+                  className={`w-6 h-6 transition-transform duration-200 ${isMovesExpanded ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </CardHeader>
+            {isMovesExpanded && (
+              <CardContent className="p-6">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-theme-border">
+                        <th className="text-left py-3 px-4 text-theme-muted-foreground font-semibold">Nivel</th>
+                        <th className="text-left py-3 px-4 text-theme-muted-foreground font-semibold">Movimiento</th>
+                        <th className="text-left py-3 px-4 text-theme-muted-foreground font-semibold">Tipo</th>
+                        <th className="text-left py-3 px-4 text-theme-muted-foreground font-semibold">Cat.</th>
+                        <th className="text-center py-3 px-4 text-theme-muted-foreground font-semibold">Poder</th>
+                        <th className="text-center py-3 px-4 text-theme-muted-foreground font-semibold">Prec.</th>
+                        <th className="text-center py-3 px-4 text-theme-muted-foreground font-semibold">PP</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pokemon.moves.map((move, index) => (
+                        <tr key={index} className="border-b border-theme-border hover:bg-theme-accent transition-colors">
+                          <td className="py-3 px-4">
+                            <span className="font-bold text-theme-primary">{move.level}</span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="font-semibold text-theme-foreground capitalize">
+                              {move.name?.replace(/-/g, ' ')}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold capitalize ${getTypeColor(move.type)}`}>
+                              {move.type}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="text-sm text-theme-muted-foreground capitalize">
+                              {move.damageClass === 'physical' ? '💥 Físico' : 
+                               move.damageClass === 'special' ? '✨ Especial' : 
+                               '🛡️ Estado'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-semibold text-theme-foreground">
+                              {move.power || '—'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-semibold text-theme-foreground">
+                              {move.accuracy || '—'}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-semibold text-theme-foreground">{move.pp}</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            )}
+          </Card>
+        )}
+
       {/* Cadena de evolución */}
       {!loadingEvolution && evolutionChain && evolutionChain.chain && evolutionChain.chain.length > 0 && (
         <Card>
@@ -637,20 +907,63 @@ export default function PokemonDetailsPage() {
       )}
 
       {/* Ubicaciones de Captura */}
-      {pokemonLocations && pokemonLocations.total_encounters > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Ubicaciones de Captura
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-[color:var(--muted)]">
-              {pokemonLocations.total_encounters} encuentro(s) en {pokemonLocations.versions.length} videojuego(s)
-            </p>
+      {pokemonLocations && pokemonLocations.total_encounters > 0 && (() => {
+        // Filtrar versiones si venimos desde un juego específico
+        const filteredVersions = gameContext?.fromGame && gameContext.versionGroupId
+          ? pokemonLocations.versions.filter(v => v.version_group_id === gameContext.versionGroupId)
+          : pokemonLocations.versions
 
-            <div className="space-y-3">
-              {pokemonLocations.versions.map((versionData) => (
+        const totalFilteredEncounters = filteredVersions.reduce((sum, v) => sum + v.encounters.length, 0)
+
+        if (totalFilteredEncounters === 0 && gameContext?.fromGame) {
+          return (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  Ubicaciones de Captura
+                  {gameContext.versionGroupName && (
+                    <span className="text-sm font-normal text-[color:var(--muted)]">
+                      • {capitalizeName(gameContext.versionGroupName)}
+                    </span>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8 text-[color:var(--muted)]">
+                  <p>Este Pokémon no está disponible en {capitalizeName(gameContext.versionGroupName || 'este juego')}</p>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        }
+
+        return (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                Ubicaciones de Captura
+                {gameContext?.fromGame && gameContext.versionGroupName && (
+                  <span className="text-sm font-normal text-[color:var(--muted)]">
+                    • {capitalizeName(gameContext.versionGroupName)}
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-[color:var(--muted)]">
+                {totalFilteredEncounters} encuentro(s) en {filteredVersions.length} videojuego(s)
+                {gameContext?.fromGame && (
+                  <button
+                    onClick={() => navigate(`/pokemon/${id}`)}
+                    className="ml-2 text-[color:var(--primary)] hover:underline"
+                  >
+                    Ver todas las ubicaciones
+                  </button>
+                )}
+              </p>
+
+              <div className="space-y-3">
+                {filteredVersions.map((versionData) => (
                 <div 
                   key={versionData.version}
                   className="rounded-lg overflow-hidden transition-all"
@@ -716,13 +1029,21 @@ export default function PokemonDetailsPage() {
                 </div>
               ))}
             </div>
+            </CardContent>
+          </Card>
+        )
+      })()}
 
-            {pokemonLocations.total_encounters === 0 && (
-              <div className="text-center py-8 text-[color:var(--muted)]">
-                <p>Este Pokémon no se puede encontrar en estado salvaje</p>
-                <p className="text-sm mt-1">(Puede ser obtenido mediante evolución, intercambio o eventos)</p>
-              </div>
-            )}
+      {pokemonLocations && pokemonLocations.total_encounters === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Ubicaciones de Captura</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8 text-[color:var(--muted)]">
+              <p>Este Pokémon no se puede encontrar en estado salvaje</p>
+              <p className="text-sm mt-1">(Puede ser obtenido mediante evolución, intercambio o eventos)</p>
+            </div>
           </CardContent>
         </Card>
       )}

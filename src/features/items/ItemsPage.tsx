@@ -1,19 +1,22 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, startTransition, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { Button } from '@/shared/components/ui/button'
 import { itemsApi, type Item } from '@/shared/api/items.api'
 
 export default function ItemsPage() {
   const [items, setItems] = useState<Item[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   const [total, setTotal] = useState(0)
   const [categories, setCategories] = useState<Array<{ id: number; name: string }>>([])
+  
+  // Refs para infinite scroll optimizado
+  const currentPageRef = useRef(1)
+  const isLoadingRef = useRef(false)
 
   // Cargar categorías al iniciar
   useEffect(() => {
@@ -29,30 +32,84 @@ export default function ItemsPage() {
     loadCategories()
   }, [])
 
-  // Cargar items
-  useEffect(() => {
-    const fetchItems = async () => {
-      try {
-        setLoading(true)
-        const response = await itemsApi.getAll({
-          page,
-          limit: 20,
-          search: searchTerm || undefined,
-          category: selectedCategory !== 'all' ? selectedCategory : undefined,
+  // Función para cargar más items (infinite scroll optimizado)
+  const loadMoreItems = useCallback(async () => {
+    if (isLoadingRef.current || !hasMore) return
+    
+    isLoadingRef.current = true
+    setLoadingMore(true)
+    
+    try {
+      const page = currentPageRef.current
+      console.log(`📦 Cargando página ${page} de items...`)
+      
+      const response = await itemsApi.getAll({
+        page,
+        limit: 50,
+        search: searchTerm || undefined,
+        category: selectedCategory !== 'all' ? selectedCategory : undefined,
+      })
+      
+      if (response.data.length > 0) {
+        startTransition(() => {
+          setItems(prev => {
+            const existingIds = new Set(prev.map(i => i.id))
+            const uniqueNew = response.data.filter(i => !existingIds.has(i.id))
+            return [...prev, ...uniqueNew]
+          })
         })
         
-        setItems(response.data)
-        setTotalPages(response.pagination.totalPages)
         setTotal(response.pagination.total)
-      } catch (error) {
-        console.error('Error fetching items:', error)
-      } finally {
-        setLoading(false)
+        currentPageRef.current += 1
+        
+        if (page >= response.pagination.totalPages) {
+          setHasMore(false)
+        }
+      } else {
+        setHasMore(false)
+      }
+    } catch (error) {
+      console.error('Error loading more items:', error)
+    } finally {
+      isLoadingRef.current = false
+      setLoadingMore(false)
+    }
+  }, [hasMore, searchTerm, selectedCategory])
+
+  // Resetear y cargar inicial cuando cambian los filtros
+  useEffect(() => {
+    const resetAndLoad = async () => {
+      setLoading(true)
+      setItems([])
+      currentPageRef.current = 1
+      setHasMore(true)
+      isLoadingRef.current = false
+      
+      await loadMoreItems()
+      setLoading(false)
+    }
+    
+    resetAndLoad()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedCategory])
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isLoadingRef.current || !hasMore) return
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = document.documentElement.clientHeight
+      
+      if (scrollTop + clientHeight >= scrollHeight - 300) {
+        loadMoreItems()
       }
     }
 
-    fetchItems()
-  }, [page, searchTerm, selectedCategory])
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [hasMore, loadMoreItems])
 
   const capitalizeName = (name: string) => {
     return name
@@ -141,27 +198,12 @@ export default function ItemsPage() {
         <p className="text-sm text-[color:var(--muted)]">
           Mostrando {items.length} de {total} items
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 1}
-            onClick={() => setPage(p => p - 1)}
-          >
-            Anterior
-          </Button>
-          <span className="px-4 py-2 text-sm text-[color:var(--text)]">
-            Página {page} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === totalPages}
-            onClick={() => setPage(p => p + 1)}
-          >
-            Siguiente
-          </Button>
-        </div>
+        {loadingMore && (
+          <div className="flex items-center gap-2 text-sm text-[color:var(--muted)]">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--primary)]"></div>
+            <span>Cargando más...</span>
+          </div>
+        )}
       </div>
 
       {/* Lista de items */}
@@ -225,6 +267,24 @@ export default function ItemsPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Indicador de fin de lista */}
+      {!hasMore && items.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-sm text-[color:var(--muted)]">
+            ✅ Has visto todos los items ({total} en total)
+          </p>
+        </div>
+      )}
+
+      {/* Loading más items */}
+      {loadingMore && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {[...Array(8)].map((_, i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
       )}
     </div>
   )

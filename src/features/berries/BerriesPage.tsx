@@ -1,28 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, startTransition, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
-import { Button } from '@/shared/components/ui/button'
 import { Skeleton } from '@/shared/components/ui/skeleton'
 import { berriesApi } from '@/shared/api/berries.api'
 
 export default function BerriesPage() {
   const [berries, setBerries] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
   const [selectedFirmness, setSelectedFirmness] = useState<string>('')
   const [firmnesses, setFirmnesses] = useState<any[]>([])
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [total, setTotal] = useState(0)
 
-  const limit = 20
+  // Refs para infinite scroll
+  const currentPageRef = useRef(1)
+  const isLoadingRef = useRef(false)
 
-  useEffect(() => {
-    loadFirmnesses()
-  }, [])
-
-  useEffect(() => {
-    loadBerries()
-  }, [search, selectedFirmness, page])
+  const limit = 50
 
   const loadFirmnesses = async () => {
     try {
@@ -33,9 +29,21 @@ export default function BerriesPage() {
     }
   }
 
-  const loadBerries = async () => {
+  useEffect(() => {
+    loadFirmnesses()
+  }, [])
+
+  // Función para cargar más berries
+  const loadMoreBerries = useCallback(async () => {
+    if (isLoadingRef.current || !hasMore) return
+    
+    isLoadingRef.current = true
+    setLoadingMore(true)
+    
     try {
-      setLoading(true)
+      const page = currentPageRef.current
+      console.log(`📦 Cargando página ${page} de berries...`)
+      
       const params = {
         search: search || undefined,
         firmness: selectedFirmness || undefined,
@@ -44,23 +52,76 @@ export default function BerriesPage() {
       }
       
       const data = await berriesApi.getBerries(params)
-      setBerries(data.data)
-      setTotalPages(data.totalPages)
+      
+      if (data.data.length > 0) {
+        startTransition(() => {
+          setBerries(prev => {
+            const existingIds = new Set(prev.map((b: any) => b.id))
+            const uniqueNew = data.data.filter((b: any) => !existingIds.has(b.id))
+            return [...prev, ...uniqueNew]
+          })
+        })
+        
+        setTotal(data.total || data.data.length)
+        currentPageRef.current += 1
+        
+        if (page >= data.totalPages) {
+          setHasMore(false)
+        }
+      } else {
+        setHasMore(false)
+      }
     } catch (error) {
       console.error('Error loading berries:', error)
     } finally {
+      isLoadingRef.current = false
+      setLoadingMore(false)
+    }
+  }, [hasMore, search, selectedFirmness, limit])
+
+  // Resetear y cargar inicial
+  useEffect(() => {
+    const resetAndLoad = async () => {
+      setLoading(true)
+      setBerries([])
+      currentPageRef.current = 1
+      setHasMore(true)
+      isLoadingRef.current = false
+      
+      await loadMoreBerries()
       setLoading(false)
     }
-  }
+    
+    resetAndLoad()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedFirmness])
+
+  // Infinite scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isLoadingRef.current || !hasMore) return
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = document.documentElement.clientHeight
+      
+      if (scrollTop + clientHeight >= scrollHeight - 300) {
+        loadMoreBerries()
+      }
+    }
+
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [hasMore, loadMoreBerries])
 
   const handleSearchChange = (value: string) => {
     setSearch(value)
-    setPage(1)
+    // El useEffect se encargará de resetear y recargar
   }
 
   const handleFirmnessChange = (firmness: string) => {
     setSelectedFirmness(firmness === selectedFirmness ? '' : firmness)
-    setPage(1)
+    // El useEffect se encargará de resetear y recargar
   }
 
   const capitalizeName = (name: string) => {
@@ -115,24 +176,25 @@ export default function BerriesPage() {
             </label>
             <div className="flex flex-wrap gap-2">
               {firmnesses.map((firmness) => (
-                <Button
+                <button
                   key={firmness.id}
-                  variant={selectedFirmness === firmness.name ? 'default' : 'outline'}
-                  size="sm"
                   onClick={() => handleFirmnessChange(firmness.name)}
-                  className="capitalize"
+                  className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-colors ${
+                    selectedFirmness === firmness.name
+                      ? 'bg-[color:var(--primary)] text-white'
+                      : 'bg-[color:var(--surface)] border border-[color:var(--border)] hover:bg-[color:var(--surface-2)]'
+                  }`}
                 >
                   {capitalizeName(firmness.name)}
-                </Button>
+                </button>
               ))}
               {selectedFirmness && (
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
                   onClick={() => setSelectedFirmness('')}
+                  className="px-3 py-1.5 text-sm rounded-lg text-[color:var(--muted)] hover:text-[color:var(--text)] hover:bg-[color:var(--surface-2)]"
                 >
                   ✕ Limpiar
-                </Button>
+                </button>
               )}
             </div>
           </div>
@@ -239,31 +301,22 @@ export default function BerriesPage() {
             ))}
           </div>
 
-          {/* Paginación */}
-          {totalPages > 1 && (
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                  >
-                    ← Anterior
-                  </Button>
-                  <span className="text-sm text-theme-secondary">
-                    Página {page} de {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                  >
-                    Siguiente →
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Indicador de fin de lista */}
+          {!hasMore && berries.length > 0 && (
+            <div className="text-center py-8">
+              <p className="text-sm text-[color:var(--muted)]">
+                ✅ Has visto todas las berries ({total} en total)
+              </p>
+            </div>
+          )}
+
+          {/* Loading más berries */}
+          {loadingMore && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-64" />
+              ))}
+            </div>
           )}
         </>
       )}

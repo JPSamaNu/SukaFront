@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react'
+import { useEffect, useState, useRef, useCallback, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pokemonApi } from '@/shared/api/pokemon.api'
 
@@ -24,17 +24,14 @@ export default function AllPokemonPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [selectedTypes, setSelectedTypes] = useState<string[]>([])
   const [totalCount, setTotalCount] = useState(0)
-  const [bufferReady, setBufferReady] = useState(false) // Nuevo estado
   const navigate = useNavigate()
-  const observerRef = useRef<IntersectionObserver | null>(null)
-  const lastPokemonRef = useRef<HTMLDivElement | null>(null)
   const searchTimeoutRef = useRef<number | null>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
   
-  // Buffer de Pokémon cargados en segundo plano (sistema de carga invisible)
-  const pokemonBufferRef = useRef<PokemonItem[]>([])
+  // Refs para control de carga (ya no necesitamos buffer porque todo se muestra progresivamente)
   const isLoadingBufferRef = useRef(false)
   const nextPageToLoadRef = useRef(1)
+  const pokemonBufferRef = useRef<PokemonItem[]>([]) // Mantener por compatibilidad
 
   // Lista de todos los tipos de Pokémon
   const pokemonTypes = [
@@ -65,19 +62,30 @@ export default function AllPokemonPage() {
     fairy: 'bg-pink-400',
   }
 
-  // Función para cargar en segundo plano (buffer invisible)
+  // Función para cargar en segundo plano con CONCURRENCIA LIMITADA
   const loadPokemonBuffer = useCallback(async (startPage: number, endPage: number, searchTerm: string = '', typeFilters: string[] = []) => {
     if (isLoadingBufferRef.current) return
     
     isLoadingBufferRef.current = true
+    const CONCURRENCY = 5 // Máximo 5 requests simultáneos
 
     try {
-      console.log(`🔄 Cargando páginas ${startPage}-${endPage} en buffer...`)
+      console.log(`🔄 Cargando páginas ${startPage}-${endPage} (concurrencia: ${CONCURRENCY})`)
       
-      // Cargar todas las páginas en paralelo
-      const promises = []
-      for (let page = startPage; page <= endPage; page++) {
-        promises.push(
+      const totalPages = endPage - startPage + 1
+      
+      // Cargar en lotes de CONCURRENCY páginas
+      for (let i = 0; i < totalPages; i += CONCURRENCY) {
+        const batchStart = startPage + i
+        const batchEnd = Math.min(batchStart + CONCURRENCY - 1, endPage)
+        const batchPages = Array.from(
+          { length: batchEnd - batchStart + 1 }, 
+          (_, idx) => batchStart + idx
+        )
+        
+        console.log(`  📦 Lote ${Math.floor(i / CONCURRENCY) + 1}: páginas ${batchStart}-${batchEnd}`)
+        
+        const promises = batchPages.map(page =>
           pokemonApi.getAll({
             page,
             limit: 50,
@@ -87,28 +95,42 @@ export default function AllPokemonPage() {
             sortOrder: 'ASC',
           })
         )
+
+        const responses = await Promise.all(promises)
+        
+        // Recopilar datos del lote
+        const batchData: PokemonItem[] = []
+        responses.forEach(response => {
+          if (response.data && response.data.length > 0) {
+            batchData.push(...response.data)
+          }
+        })
+        
+        console.log(`  ✓ Lote completado: ${batchData.length} Pokémon en este lote`)
+        
+        // MOSTRAR INMEDIATAMENTE cada lote (Progressive Loading)
+        if (batchData.length > 0) {
+          // Filtrar primeros 10 solo del primer lote si incluye página 1
+          const dataToShow = (batchStart === 1) ? batchData.slice(10) : batchData
+          
+          if (dataToShow.length > 0) {
+            startTransition(() => {
+              setPokemon(prev => {
+                const existingIds = new Set(prev.map(p => p.id))
+                const uniqueNew = dataToShow.filter(p => !existingIds.has(p.id))
+                console.log(`  ✨ Mostrando +${uniqueNew.length} (total: ${prev.length + uniqueNew.length})`)
+                return [...prev, ...uniqueNew]
+              })
+            })
+          }
+        }
       }
 
-      const responses = await Promise.all(promises)
+      // Ya no necesitamos buffer, todo se muestra progresivamente
+      pokemonBufferRef.current = []
+      setHasMore(false) // Ya se mostró todo
       
-      // Combinar todos los resultados en orden
-      const allData: PokemonItem[] = []
-      responses.forEach(response => {
-        if (response.data && response.data.length > 0) {
-          allData.push(...response.data)
-        }
-      })
-
-      // Filtrar los primeros 10 que ya están visibles (si página 1 está incluida)
-      const bufferData = startPage === 1 ? allData.slice(10) : allData
-      
-      // Reemplazar el buffer completo (no agregar)
-      pokemonBufferRef.current = bufferData
-      
-      console.log(`✅ Buffer listo: ${bufferData.length} Pokémon disponibles`)
-      
-      // TRIGGER: Notificar que el buffer está listo
-      setBufferReady(true)
+      console.log(`✅ Carga completa: Todos los Pokémon visibles`)
       
     } catch (error) {
       console.error('Error cargando buffer:', error)
@@ -154,33 +176,12 @@ export default function AllPokemonPage() {
 
         console.log(`📊 Total: ${initialResponse.total} Pokémon | Mostrando: 10 iniciales`)
         
-        // Cargar TODO en el buffer de inmediato en paralelo
+        // Cargar resto progresivamente (cada lote se muestra automáticamente)
         if (initialResponse.total > 10) {
-          setTimeout(async () => {
+          setTimeout(() => {
             const totalPages = Math.ceil(initialResponse.total / 50)
-            // Cargar TODAS las páginas de una vez (incluida la página 1 completa)
-            await loadPokemonBuffer(1, totalPages, searchTerm, typeFilters)
-            
-            // FORZAR display inmediato después de cargar el buffer
-            console.log(`🎯 FORZANDO AUTO-DISPLAY MANUAL`)
-            setTimeout(() => {
-              if (pokemonBufferRef.current.length > 0) {
-                const BATCH = 50
-                const batch = pokemonBufferRef.current.slice(0, BATCH)
-                pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH)
-                
-                setPokemon(prev => {
-                  const ids = new Set(prev.map(p => p.id))
-                  const unique = batch.filter(p => !ids.has(p.id))
-                  console.log(`💥 DISPLAY FORZADO: ${prev.length} + ${unique.length}`)
-                  return [...prev, ...unique]
-                })
-                
-                // Mantener hasMore en true si todavía hay buffer
-                setHasMore(pokemonBufferRef.current.length > 0)
-                console.log(`✓ hasMore=${pokemonBufferRef.current.length > 0}, buffer restante: ${pokemonBufferRef.current.length}`)
-              }
-            }, 500)
+            // Cargar desde página 1 (se filtrará el duplicado automáticamente)
+            loadPokemonBuffer(1, totalPages, searchTerm, typeFilters)
           }, 100)
         }
       }
@@ -194,66 +195,6 @@ export default function AllPokemonPage() {
       }
     }
   }, [loadPokemonBuffer])
-
-  // Mostrar más Pokémon desde el buffer (sin loading visible)
-  const showMoreFromBuffer = useCallback(() => {
-    const BATCH_SIZE = 10 // Mostrar 10 más cada vez
-    
-    if (pokemonBufferRef.current.length > 0) {
-      // Tomar los primeros 10 del buffer
-      const nextBatch = pokemonBufferRef.current.slice(0, BATCH_SIZE)
-      pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH_SIZE)
-      
-      // Agregar solo Pokémon que no existan ya (prevenir duplicados)
-      setPokemon(prev => {
-        const existingIds = new Set(prev.map(p => p.id))
-        const uniqueNewPokemon = nextBatch.filter(p => !existingIds.has(p.id))
-        return [...prev, ...uniqueNewPokemon]
-      })
-      
-      console.log(`✨ Mostrando ${nextBatch.length} más del buffer. Quedan ${pokemonBufferRef.current.length} en buffer`)
-      
-      // Actualizar hasMore cuando el buffer se vacía
-      if (pokemonBufferRef.current.length === 0) {
-        setHasMore(false)
-        console.log(`🎉 ¡Todos los Pokémon cargados!`)
-      }
-    } else {
-      // No hay más en el buffer
-      setHasMore(false)
-      console.log(`� Buffer vacío, no hay más Pokémon`)
-    }
-  }, [])
-
-  // Auto-mostrar más Pokémon del buffer cuando esté cargado
-  useEffect(() => {
-    const MIN_VISIBLE = 50
-    
-    if (!loading && pokemon.length > 0 && pokemon.length < MIN_VISIBLE && pokemonBufferRef.current.length > 0) {
-      console.log(`🚀 AUTO-DISPLAY: ${pokemon.length} visibles < ${MIN_VISIBLE}, buffer: ${pokemonBufferRef.current.length}`)
-      
-      const timer = setTimeout(() => {
-        const BATCH_SIZE = 50
-        const nextBatch = pokemonBufferRef.current.slice(0, BATCH_SIZE)
-        pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH_SIZE)
-        
-        console.log(`  � Auto-mostrando ${nextBatch.length} más`)
-        
-        setPokemon(prev => {
-          const existingIds = new Set(prev.map(p => p.id))
-          const uniqueNewPokemon = nextBatch.filter(p => !existingIds.has(p.id))
-          console.log(`  ✅ Agregados ${uniqueNewPokemon.length} únicos`)
-          return [...prev, ...uniqueNewPokemon]
-        })
-        
-        if (pokemonBufferRef.current.length === 0) {
-          setHasMore(false)
-        }
-      }, 500) // Delay más largo para dar tiempo al buffer
-      
-      return () => clearTimeout(timer)
-    }
-  }, [pokemon.length, loading])
 
   // Cargar página inicial cuando cambian los filtros
   useEffect(() => {
@@ -277,57 +218,8 @@ export default function AllPokemonPage() {
     }
   }, [search])
 
-  // Infinite scroll observer con sistema de buffer (sin loading visible)
-  useEffect(() => {
-    if (loading) return
-
-    if (observerRef.current) observerRef.current.disconnect()
-
-    observerRef.current = new IntersectionObserver(
-      entries => {
-        const hasBuffer = pokemonBufferRef.current.length > 0
-        console.log(`👁️ Observer: intersecting=${entries[0].isIntersecting}, buffer=${pokemonBufferRef.current.length}, loading=${loading}`)
-        
-        // CAMBIO: Verificar buffer directamente, no hasMore
-        if (entries[0].isIntersecting && hasBuffer && !loading) {
-          console.log(`  🎯 Trigger! Mostrando más...`)
-          
-          const BATCH_SIZE = 50
-          const nextBatch = pokemonBufferRef.current.slice(0, BATCH_SIZE)
-          pokemonBufferRef.current = pokemonBufferRef.current.slice(BATCH_SIZE)
-          
-          console.log(`  📦 Tomando ${nextBatch.length} del buffer`)
-          
-          setPokemon(prev => {
-            const existingIds = new Set(prev.map(p => p.id))
-            const uniqueNewPokemon = nextBatch.filter(p => !existingIds.has(p.id))
-            console.log(`  ✅ Agregando ${uniqueNewPokemon.length} únicos (total: ${prev.length + uniqueNewPokemon.length})`)
-            return [...prev, ...uniqueNewPokemon]
-          })
-          
-          // Actualizar hasMore basado en buffer restante
-          const stillHasMore = pokemonBufferRef.current.length > 0
-          setHasMore(stillHasMore)
-          console.log(`  ℹ️ hasMore=${stillHasMore}, buffer restante: ${pokemonBufferRef.current.length}`)
-        }
-      },
-      {
-        rootMargin: '800px',
-        threshold: 0.1,
-      }
-    )
-
-    if (lastPokemonRef.current) {
-      observerRef.current.observe(lastPokemonRef.current)
-      console.log(`👀 Observer ACTIVADO - Visibles: ${pokemon.length}, Buffer: ${pokemonBufferRef.current.length}`)
-    } else {
-      console.log(`⚠️ lastPokemonRef.current es null!`)
-    }
-
-    return () => {
-      if (observerRef.current) observerRef.current.disconnect()
-    }
-  }, [pokemon.length, hasMore, loading])
+  // Ya NO necesitamos IntersectionObserver porque todo se carga progresivamente
+  // El sistema ahora muestra cada lote automáticamente conforme se descarga
 
   const handlePokemonClick = (pokemonId: number) => {
     navigate(`/pokemon/${pokemonId}`)
@@ -448,8 +340,7 @@ export default function AllPokemonPage() {
 
       {/* Grid de Pokémon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-        {pokemon.map((poke, index) => {
-          const isLast = index === pokemon.length - 1
+        {pokemon.map((poke) => {
           const imageUrl = poke.sprites?.other?.['official-artwork']?.front_default 
             || poke.sprites?.front_default
             || '/placeholder-pokemon.png'
@@ -457,7 +348,6 @@ export default function AllPokemonPage() {
           return (
             <div
               key={poke.id}
-              ref={isLast ? lastPokemonRef : null}
               className="pokemon-item cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-2 border-[color:var(--border)] hover:border-[color:var(--btn-bg)] rounded-lg overflow-hidden bg-[color:var(--card)]"
               onClick={() => handlePokemonClick(poke.id)}
             >
@@ -468,6 +358,7 @@ export default function AllPokemonPage() {
                     alt={poke.name}
                     className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
                     loading="lazy"
+                    decoding="async"
                     onError={(e) => {
                       e.currentTarget.src = '/placeholder-pokemon.png'
                     }}

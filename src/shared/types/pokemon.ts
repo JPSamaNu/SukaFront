@@ -38,6 +38,29 @@ export interface Pokemon {
   speciesName: string
   generationId: number
   generationName: string
+  moves?: Array<{
+    level: number
+    name: string
+    type: string
+    power: number | null
+    accuracy: number | null
+    pp: number
+    damageClass: string
+  }>
+  classification?: {
+    isLegendary: boolean
+    isMythical: boolean
+    isBaby: boolean
+    captureRate: number
+    baseHappiness: number
+    hatchCounter: number
+    genderRate: number
+    growthRate: string
+    habitat: string | null
+    color: string
+    shape: string
+    eggGroups: string[]
+  }
 }
 
 // Respuesta de la API de listado

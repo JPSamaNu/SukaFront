@@ -1,21 +1,24 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, startTransition, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { Skeleton } from '@/shared/components/ui/skeleton'
-import { Button } from '@/shared/components/ui/button'
 import { movesApi, type Move } from '@/shared/api/moves.api'
 
 export default function MovesPage() {
   const [moves, setMoves] = useState<Move[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedType, setSelectedType] = useState<string>('all')
   const [selectedDamageClass, setSelectedDamageClass] = useState<string>('all')
-  const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
   const [total, setTotal] = useState(0)
   const [types, setTypes] = useState<Array<{ id: number; name: string }>>([])
   const [damageClasses, setDamageClasses] = useState<Array<{ id: number; name: string }>>([])
+  
+  // Refs para infinite scroll optimizado
+  const currentPageRef = useRef(1)
+  const isLoadingRef = useRef(false)
 
   // Cargar tipos y clases de daño al iniciar
   useEffect(() => {
@@ -35,31 +38,87 @@ export default function MovesPage() {
     loadFilters()
   }, [])
 
-  // Cargar movimientos
-  useEffect(() => {
-    const fetchMoves = async () => {
-      try {
-        setLoading(true)
-        const response = await movesApi.getAll({
-          page,
-          limit: 20,
-          search: searchTerm || undefined,
-          type: selectedType !== 'all' ? selectedType : undefined,
-          damageClass: selectedDamageClass !== 'all' ? selectedDamageClass : undefined,
+  // Función para cargar más movimientos (infinite scroll optimizado)
+  const loadMoreMoves = useCallback(async () => {
+    if (isLoadingRef.current || !hasMore) return
+    
+    isLoadingRef.current = true
+    setLoadingMore(true)
+    
+    try {
+      const page = currentPageRef.current
+      console.log(`📦 Cargando página ${page} de movimientos...`)
+      
+      const response = await movesApi.getAll({
+        page,
+        limit: 50, // Lotes de 50 movimientos
+        search: searchTerm || undefined,
+        type: selectedType !== 'all' ? selectedType : undefined,
+        damageClass: selectedDamageClass !== 'all' ? selectedDamageClass : undefined,
+      })
+      
+      if (response.data.length > 0) {
+        startTransition(() => {
+          setMoves(prev => {
+            const existingIds = new Set(prev.map(m => m.id))
+            const uniqueNew = response.data.filter(m => !existingIds.has(m.id))
+            return [...prev, ...uniqueNew]
+          })
         })
         
-        setMoves(response.data)
-        setTotalPages(response.pagination.totalPages)
         setTotal(response.pagination.total)
-      } catch (error) {
-        console.error('Error fetching moves:', error)
-      } finally {
-        setLoading(false)
+        currentPageRef.current += 1
+        
+        // Si no hay más páginas, desactivar hasMore
+        if (page >= response.pagination.totalPages) {
+          setHasMore(false)
+        }
+      } else {
+        setHasMore(false)
+      }
+    } catch (error) {
+      console.error('Error loading more moves:', error)
+    } finally {
+      isLoadingRef.current = false
+      setLoadingMore(false)
+    }
+  }, [hasMore, searchTerm, selectedType, selectedDamageClass])
+
+  // Resetear y cargar inicial cuando cambian los filtros
+  useEffect(() => {
+    const resetAndLoad = async () => {
+      setLoading(true)
+      setMoves([])
+      currentPageRef.current = 1
+      setHasMore(true)
+      isLoadingRef.current = false
+      
+      await loadMoreMoves()
+      setLoading(false)
+    }
+    
+    resetAndLoad()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, selectedType, selectedDamageClass])
+
+  // Infinite scroll: detectar cuando el usuario llega al final
+  useEffect(() => {
+    const handleScroll = () => {
+      if (isLoadingRef.current || !hasMore) return
+      
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
+      const scrollHeight = document.documentElement.scrollHeight
+      const clientHeight = document.documentElement.clientHeight
+      
+      // Cuando esté a 300px del final, cargar más
+      if (scrollTop + clientHeight >= scrollHeight - 300) {
+        loadMoreMoves()
       }
     }
 
-    fetchMoves()
-  }, [page, searchTerm, selectedType, selectedDamageClass])
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [hasMore, loadMoreMoves])
 
   const getTypeColor = (type: string) => {
     const colors: Record<string, string> = {
@@ -193,27 +252,12 @@ export default function MovesPage() {
         <p className="text-sm text-[color:var(--muted)]">
           Mostrando {moves.length} de {total} movimientos
         </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 1}
-            onClick={() => setPage(p => p - 1)}
-          >
-            Anterior
-          </Button>
-          <span className="px-4 py-2 text-sm text-[color:var(--text)]">
-            Página {page} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === totalPages}
-            onClick={() => setPage(p => p + 1)}
-          >
-            Siguiente
-          </Button>
-        </div>
+        {loadingMore && (
+          <div className="flex items-center gap-2 text-sm text-[color:var(--muted)]">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--primary)]"></div>
+            <span>Cargando más...</span>
+          </div>
+        )}
       </div>
 
       {/* Lista de movimientos */}
@@ -280,6 +324,24 @@ export default function MovesPage() {
             </p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Indicador de fin de lista */}
+      {!hasMore && moves.length > 0 && (
+        <div className="text-center py-8">
+          <p className="text-sm text-[color:var(--muted)]">
+            ✅ Has visto todos los movimientos ({total} en total)
+          </p>
+        </div>
+      )}
+
+      {/* Loading más movimientos */}
+      {loadingMore && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
       )}
     </div>
   )

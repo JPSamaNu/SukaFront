@@ -14,6 +14,8 @@ import TypesTablePage from '@/features/types/TypesTablePage'
 import MovesPage from '@/features/moves/MovesPage'
 import ItemsPage from '@/features/items/ItemsPage'
 import BerriesPage from '@/features/berries/BerriesPage'
+import GamesPage from '@/features/games/GamesPage'
+import GameDetailsPage from '@/features/games/GameDetailsPage'
 
 export const router = createBrowserRouter([
   // Rutas públicas (login, registro, etc.)
@@ -85,6 +87,14 @@ export const router = createBrowserRouter([
           {
             path: 'berries',
             element: <BerriesPage />,
+          },
+          {
+            path: 'games',
+            element: <GamesPage />,
+          },
+          {
+            path: 'games/:id',
+            element: <GameDetailsPage />,
           },
         ],
       },
