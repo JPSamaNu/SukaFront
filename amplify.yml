@@ -5,10 +5,13 @@ applications:
         preBuild:
           commands:
             - node -v
-            - npm ci
+            - corepack enable
+            - corepack prepare pnpm@8.15.4 --activate
+            - pnpm -v
+            - pnpm install --frozen-lockfile
         build:
           commands:
-            - npm run build
+            - pnpm run build
       artifacts:
         baseDirectory: dist
         files:
@@ -16,13 +19,7 @@ applications:
       cache:
         paths:
           - node_modules/**/*
-    appRoot: /
-    Source address:  /<*>
-    Target address:  /index.html
-    Type:            200 (Rewrite)
-
-    environment:
-      variables: 
-        VITE_API_BASE_URL: "https://api.sukadex.net/api/v1" 
-    # Si te pide Runtime explícito:
-    # NOTE: algunas cuentas requieren 'frontend->phases->preBuild' con 'nvm use 20'
+          - .pnpm-store/**/*
+      environment:
+        variables:
+          VITE_API_BASE_URL: "https://api.sukadex.net/api/v1"
