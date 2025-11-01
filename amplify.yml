@@ -1,19 +1,41 @@
-# amplify.yml en la raíz del repo (sin appRoot si estás en raíz)
 version: 1
 applications:
   - frontend:
       phases:
         preBuild:
           commands:
+            # 1) Fija Node.js a la versión LTS
+            - nvm install 20 && nvm use 20
             - node -v
+            - npm -v
+
+            # 2) Activa Corepack y pnpm (versión compatible con lockfile 9.0)
             - corepack enable
-            - corepack prepare pnpm@9.12.2 --activate   # ⬅️ usa la misma mayor que tu lockfile
+            - corepack prepare pnpm@9.15.0 --activate
             - pnpm -v
+
+            # 3) Instala dependencias de forma reproducible
             - pnpm install --frozen-lockfile
-            - nvm install 20 && nvm use 20 
+
         build:
           commands:
+            # Re-asegura Node.js y pnpm en la fase de build
+            - nvm use 20
+            - corepack enable
+            - corepack prepare pnpm@9.15.0 --activate
+            - pnpm -v
+
+            # Ejecuta el build de TypeScript + Vite
             - pnpm run build
+
+        postBuild:
+          commands:
+            # Verifica que el build se haya generado correctamente
+            - echo "Build completed. Checking dist directory..."
+            - ls -la dist/
+            - echo "Build artifacts:"
+            - find dist -type f -name "*.js" -o -name "*.css" -o -name "*.html" | head -10
+
       artifacts:
         baseDirectory: dist
         files:
@@ -24,4 +46,11 @@ applications:
           - .pnpm-store/**/*
       environment:
         variables:
-          VITE_API_BASE_URL: "https://api.sukadex.net"
+          VITE_API_BASE_URL: "https://api.sukadex.net/api/v1"
+          # Variables adicionales para optimización
+          NODE_ENV: "production"
+          CI: "true"
+          # Optimizaciones para Vite
+          VITE_BUILD_TARGET: "es2020"
+          # Configuración para pnpm
+          PNPM_HOME: "/root/.local/share/pnpm"
