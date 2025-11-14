@@ -1,4 +1,3 @@
-import { Button } from '@/shared/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import TypeGrid from './components/TypeGrid'
@@ -53,22 +52,23 @@ export default function TypesTablePage() {
   return (
     <div className="space-y-4 px-2">
       {/* Encabezado */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-[color:var(--text)]">
-            Tabla de Tipos
-          </h1>
-          <p className="text-sm text-[color:var(--muted)] mt-1">
-            {selectedType ? 'Efectividad de tipos' : 'Selecciona un tipo'}
-          </p>
+      <div className="pokedex-panel">
+        <div className="flex items-center justify-between p-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-neutral-200 font-display tracking-wider uppercase">
+              TYPE CHART
+            </h1>
+            <p className="text-sm text-neutral-500 mt-1 font-mono">
+              {selectedType ? 'Efectividad de tipos' : 'Selecciona un tipo'}
+            </p>
+          </div>
+          <button 
+            onClick={handleBack}
+            className="px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-200 border border-neutral-700 hover:border-pokedex-neon font-mono text-sm"
+          >
+            {selectedType ? '← Tipos' : '← Menú'}
+          </button>
         </div>
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={handleBack}
-        >
-          {selectedType ? '← Tipos' : '← Menú'}
-        </Button>
       </div>
 
       {/* Matriz de tipos o vista de efectividad */}
@@ -80,19 +80,17 @@ export default function TypesTablePage() {
       ) : showTypeSelector ? (
         // Selector de segundo tipo
         <div className="space-y-3">
-          <div className="text-center">
-            <p className="text-sm text-[color:var(--muted)]">
+          <div className="pokedex-panel text-center p-4">
+            <p className="text-sm text-neutral-400 font-mono">
               Selecciona un segundo tipo para combinar con{' '}
-              <span className="font-bold">{selectedType.name}</span>
+              <span className="font-bold text-pokedex-neon">{selectedType.name}</span>
             </p>
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="mt-2"
+            <button 
+              className="mt-3 px-4 py-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors text-neutral-200 border border-neutral-700 hover:border-pokedex-neon font-mono text-sm"
               onClick={() => setShowTypeSelector(false)}
             >
               Cancelar
-            </Button>
+            </button>
           </div>
           <TypeGrid 
             types={pokemonTypes} 

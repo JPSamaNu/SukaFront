@@ -15,6 +15,8 @@ import ItemsPage from '@/features/items/ItemsPage'
 import BerriesPage from '@/features/berries/BerriesPage'
 import GamesPage from '@/features/games/GamesPage'
 import GameDetailsPage from '@/features/games/GameDetailsPage'
+import TeamsPage from '@/features/teams/TeamsPage'
+import TeamBuilderPage from '@/features/teams/TeamBuilderPage'
 
 export const router = createBrowserRouter([
   // Rutas públicas (login, registro, etc.)
@@ -56,6 +58,10 @@ export const router = createBrowserRouter([
             element: <AllPokemonPage />,
           },
           {
+            path: 'pokemon',
+            element: <AllPokemonPage />,
+          },
+          {
             path: 'generation/:name',
             element: <PokemonDetailsPage />,
           },
@@ -86,6 +92,18 @@ export const router = createBrowserRouter([
           {
             path: 'games/:id',
             element: <GameDetailsPage />,
+          },
+          {
+            path: 'teams',
+            element: <TeamsPage />,
+          },
+          {
+            path: 'teams/:id',
+            element: <TeamBuilderPage />,
+          },
+          {
+            path: 'teams/:id/edit',
+            element: <TeamBuilderPage />,
           },
         ],
       },

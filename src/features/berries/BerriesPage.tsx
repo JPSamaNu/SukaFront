@@ -1,7 +1,4 @@
 import { useState, useEffect, useRef, startTransition, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
-import { Skeleton } from '@/shared/components/ui/skeleton'
 import { berriesApi } from '@/shared/api/berries.api'
 
 export default function BerriesPage() {
@@ -142,36 +139,42 @@ export default function BerriesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-theme-foreground">Berries</h1>
-        <p className="text-theme-secondary mt-2">
-          Explora todas las bayas disponibles en el mundo Pokémon
-        </p>
+      <div className="pokedex-panel bg-gradient-to-r from-green-600 to-green-700 text-white">
+        <div className="p-6">
+          <h1 className="text-3xl font-bold text-white font-display tracking-wider mb-2">
+            🍓 BERRIES DATABASE
+          </h1>
+          <p className="text-green-100 font-mono">
+            Explora todas las bayas disponibles en el mundo Pokémon
+          </p>
+        </div>
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="pokedex-panel">
+        <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 px-4 py-3 border-b border-pokedex-neon/20">
+          <h3 className="font-display text-sm tracking-wider text-neutral-400 uppercase">
+            FILTERS
+          </h3>
+        </div>
+        <div className="p-6 space-y-4">
           {/* Búsqueda */}
           <div>
-            <label className="text-sm font-medium text-theme-foreground mb-2 block">
+            <label className="text-sm font-medium text-neutral-400 font-mono mb-2 block uppercase">
               Buscar berry
             </label>
-            <Input
+            <input
               type="text"
               placeholder="Buscar por nombre..."
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full"
+              className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200 placeholder-neutral-500 font-mono focus:outline-none focus:border-pokedex-neon focus:ring-1 focus:ring-pokedex-neon transition-all"
             />
           </div>
 
           {/* Firmeza */}
           <div>
-            <label className="text-sm font-medium text-theme-foreground mb-2 block">
+            <label className="text-sm font-medium text-neutral-400 font-mono mb-2 block uppercase">
               Firmeza
             </label>
             <div className="flex flex-wrap gap-2">
@@ -179,10 +182,10 @@ export default function BerriesPage() {
                 <button
                   key={firmness.id}
                   onClick={() => handleFirmnessChange(firmness.name)}
-                  className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-colors ${
+                  className={`px-3 py-1.5 text-sm rounded-lg capitalize transition-colors font-mono ${
                     selectedFirmness === firmness.name
-                      ? 'bg-[color:var(--primary)] text-white'
-                      : 'bg-[color:var(--surface)] border border-[color:var(--border)] hover:bg-[color:var(--surface-2)]'
+                      ? 'bg-pokedex-neon text-black font-bold'
+                      : 'bg-neutral-800 border border-neutral-700 text-neutral-300 hover:bg-neutral-700'
                   }`}
                 >
                   {capitalizeName(firmness.name)}
@@ -191,49 +194,47 @@ export default function BerriesPage() {
               {selectedFirmness && (
                 <button
                   onClick={() => setSelectedFirmness('')}
-                  className="px-3 py-1.5 text-sm rounded-lg text-[color:var(--muted)] hover:text-[color:var(--text)] hover:bg-[color:var(--surface-2)]"
+                  className="px-3 py-1.5 text-sm rounded-lg text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 font-mono"
                 >
                   ✕ Limpiar
                 </button>
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Grid de Berries */}
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
-            <Card key={i}>
-              <CardContent className="p-6">
-                <Skeleton className="h-32 w-full mb-4" />
-                <Skeleton className="h-6 w-3/4 mb-2" />
-                <Skeleton className="h-4 w-1/2" />
-              </CardContent>
-            </Card>
+            <div key={i} className="pokedex-panel p-6">
+              <div className="h-32 w-full mb-4 bg-neutral-800/50 animate-pulse rounded"></div>
+              <div className="h-6 w-3/4 mb-2 bg-neutral-800/50 animate-pulse rounded"></div>
+              <div className="h-4 w-1/2 bg-neutral-800/50 animate-pulse rounded"></div>
+            </div>
           ))}
         </div>
       ) : berries.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <p className="text-theme-secondary">
+        <div className="pokedex-panel">
+          <div className="p-12 text-center">
+            <p className="text-neutral-500 font-mono">
               No se encontraron berries con los filtros aplicados
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         <>
           <div className="space-y-2">
             {berries.map((berry) => (
-              <Card
+              <div
                 key={berry.id}
-                className="hover:shadow-md transition-shadow"
+                className="pokedex-panel hover:shadow-lg hover:shadow-pokedex-neon/10 transition-shadow"
               >
-                <CardContent className="p-4">
+                <div className="p-4">
                   <div className="flex items-center gap-4">
                     {/* Sprite */}
-                    <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="flex-shrink-0 w-16 h-16 bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-lg flex items-center justify-center border border-neutral-800">
                       {berry.sprite ? (
                         <img
                           src={berry.sprite}
@@ -241,20 +242,20 @@ export default function BerriesPage() {
                           className="w-12 h-12 object-contain"
                         />
                       ) : (
-                        <span className="text-3xl"></span>
+                        <span className="text-3xl">🍓</span>
                       )}
                     </div>
 
                     {/* Info principal */}
                     <div className="flex-grow min-w-0">
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                        <span className="text-sm font-semibold text-pokedex-neon font-mono">
                           #{berry.id.toString().padStart(3, '0')}
                         </span>
-                        <h3 className="text-lg font-bold text-theme-foreground capitalize">
+                        <h3 className="text-lg font-bold text-neutral-200 capitalize font-display tracking-wider">
                           {capitalizeName(berry.name)}
                         </h3>
-                        <span className="text-sm text-theme-secondary capitalize">
+                        <span className="text-sm text-neutral-400 capitalize font-mono">
                           {capitalizeName(berry.firmness)}
                         </span>
                       </div>
@@ -265,11 +266,11 @@ export default function BerriesPage() {
                           {berry.flavors.map((flavor: any) => (
                             <div
                               key={flavor.flavor}
-                              className="flex items-center gap-1.5 px-2 py-1 bg-gray-100 rounded-md text-xs"
+                              className="flex items-center gap-1.5 px-2 py-1 bg-neutral-800 rounded-md text-xs border border-neutral-700"
                             >
                               <span className={`w-2.5 h-2.5 rounded-full ${getFlavorColor(flavor.flavor)}`} />
-                              <span className="capitalize font-medium">{flavor.flavor}</span>
-                              <span className="text-theme-secondary">({flavor.potency})</span>
+                              <span className="capitalize font-medium font-mono text-neutral-300">{flavor.flavor}</span>
+                              <span className="text-neutral-500 font-mono">({flavor.potency})</span>
                             </div>
                           ))}
                         </div>
@@ -279,32 +280,32 @@ export default function BerriesPage() {
                     {/* Stats */}
                     <div className="flex-shrink-0 hidden md:flex items-center gap-6 text-sm">
                       <div className="text-center">
-                        <p className="text-theme-secondary text-xs mb-1">Tamaño</p>
-                        <p className="font-semibold">{berry.size} mm</p>
+                        <p className="text-neutral-500 text-xs mb-1 font-mono uppercase">Tamaño</p>
+                        <p className="font-semibold text-pokedex-neon font-mono">{berry.size} mm</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-theme-secondary text-xs mb-1">Tiempo</p>
-                        <p className="font-semibold">{berry.growthTime}h</p>
+                        <p className="text-neutral-500 text-xs mb-1 font-mono uppercase">Tiempo</p>
+                        <p className="font-semibold text-pokedex-neon font-mono">{berry.growthTime}h</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-theme-secondary text-xs mb-1">Cosecha</p>
-                        <p className="font-semibold">{berry.maxHarvest}</p>
+                        <p className="text-neutral-500 text-xs mb-1 font-mono uppercase">Cosecha</p>
+                        <p className="font-semibold text-pokedex-neon font-mono">{berry.maxHarvest}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-theme-secondary text-xs mb-1">Suavidad</p>
-                        <p className="font-semibold">{berry.smoothness}</p>
+                        <p className="text-neutral-500 text-xs mb-1 font-mono uppercase">Suavidad</p>
+                        <p className="font-semibold text-pokedex-neon font-mono">{berry.smoothness}</p>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
 
           {/* Indicador de fin de lista */}
           {!hasMore && berries.length > 0 && (
             <div className="text-center py-8">
-              <p className="text-sm text-[color:var(--muted)]">
+              <p className="text-sm text-neutral-500 font-mono">
                 ✅ Has visto todas las berries ({total} en total)
               </p>
             </div>
@@ -314,7 +315,7 @@ export default function BerriesPage() {
           {loadingMore && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="h-64" />
+                <div key={i} className="h-64 bg-neutral-800/50 animate-pulse rounded"></div>
               ))}
             </div>
           )}

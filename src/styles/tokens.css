@@ -1,0 +1,19 @@
+/* NeoDex Tokens */
+:root {
+  --led-size: 12px;
+  --panel-gap: 12px;
+  --ring: 0 0 0 3px rgba(0, 180, 216, 0.25);
+}
+
+.dark {
+  --ring: 0 0 0 3px rgba(0, 180, 216, 0.35);
+}
+
+/* Motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .animate-led,
+  .animate-scan,
+  .animate-boot {
+    animation: none !important;
+  }
+}

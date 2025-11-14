@@ -1,7 +1,4 @@
 import { useState, useEffect, useRef, startTransition, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
-import { Skeleton } from '@/shared/components/ui/skeleton'
 import { movesApi, type Move } from '@/shared/api/moves.api'
 
 export default function MovesPage() {
@@ -164,10 +161,10 @@ export default function MovesPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-12 w-64" />
+        <div className="h-12 w-64 bg-neutral-800/50 animate-pulse rounded"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-48" />
+            <div key={i} className="h-48 bg-neutral-800/50 animate-pulse rounded"></div>
           ))}
         </div>
       </div>
@@ -177,42 +174,47 @@ export default function MovesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold text-[color:var(--text)]">
-          Movimientos Pokémon
-        </h1>
-        <p className="text-[color:var(--muted)]">
-          Explora todos los movimientos disponibles en el mundo Pokémon
-        </p>
+      <div className="pokedex-panel bg-gradient-to-r from-orange-600 to-orange-700 text-white">
+        <div className="p-6">
+          <h1 className="text-3xl font-bold text-white font-display tracking-wider mb-2">
+            ⚔️ MOVES DATABASE
+          </h1>
+          <p className="text-orange-100 font-mono">
+            Explora todos los movimientos disponibles en el mundo Pokémon
+          </p>
+        </div>
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="pokedex-panel">
+        <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 px-4 py-3 border-b border-pokedex-neon/20">
+          <h3 className="font-display text-sm tracking-wider text-neutral-400 uppercase">
+            FILTERS
+          </h3>
+        </div>
+        <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Búsqueda */}
             <div>
-              <label className="text-sm font-medium text-[color:var(--text)] mb-2 block">
+              <label className="text-sm font-medium text-neutral-400 font-mono mb-2 block uppercase">
                 Buscar movimiento
               </label>
-              <Input
+              <input
                 type="text"
                 placeholder="Ej: Flamethrower"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-neutral-200 placeholder-neutral-500 font-mono focus:outline-none focus:border-pokedex-neon focus:ring-1 focus:ring-pokedex-neon transition-all"
               />
             </div>
 
             {/* Tipo */}
             <div>
-              <label className="text-sm font-medium text-[color:var(--text)] mb-2 block">
+              <label className="text-sm font-medium text-neutral-400 font-mono mb-2 block uppercase">
                 Tipo
               </label>
               <select
-                className="w-full px-3 py-2 rounded-lg border border-[color:var(--card-border)] bg-[color:var(--surface)] text-[color:var(--text)]"
+                className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-200 font-mono focus:outline-none focus:border-pokedex-neon focus:ring-1 focus:ring-pokedex-neon transition-all"
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
               >
@@ -227,11 +229,11 @@ export default function MovesPage() {
 
             {/* Clase de daño */}
             <div>
-              <label className="text-sm font-medium text-[color:var(--text)] mb-2 block">
+              <label className="text-sm font-medium text-neutral-400 font-mono mb-2 block uppercase">
                 Categoría
               </label>
               <select
-                className="w-full px-3 py-2 rounded-lg border border-[color:var(--card-border)] bg-[color:var(--surface)] text-[color:var(--text)]"
+                className="w-full px-3 py-2 rounded-lg border border-neutral-800 bg-neutral-900 text-neutral-200 font-mono focus:outline-none focus:border-pokedex-neon focus:ring-1 focus:ring-pokedex-neon transition-all"
                 value={selectedDamageClass}
                 onChange={(e) => setSelectedDamageClass(e.target.value)}
               >
@@ -244,17 +246,17 @@ export default function MovesPage() {
               </select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Resultados */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[color:var(--muted)]">
+        <p className="text-sm text-neutral-500 font-mono">
           Mostrando {moves.length} de {total} movimientos
         </p>
         {loadingMore && (
-          <div className="flex items-center gap-2 text-sm text-[color:var(--muted)]">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--primary)]"></div>
+          <div className="flex items-center gap-2 text-sm text-neutral-500 font-mono">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pokedex-neon"></div>
             <span>Cargando más...</span>
           </div>
         )}
@@ -263,42 +265,42 @@ export default function MovesPage() {
       {/* Lista de movimientos */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {moves.map((move) => (
-          <Card key={move.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader>
+          <div key={move.id} className="pokedex-panel hover:shadow-lg hover:shadow-pokedex-neon/10 transition-shadow cursor-pointer">
+            <div className="p-4 border-b border-neutral-800">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">
+                <h3 className="text-lg font-display tracking-wider text-neutral-200 uppercase">
                   {capitalizeName(move.name)}
-                </CardTitle>
+                </h3>
                 <span className="text-2xl">{getDamageClassIcon(move.damageClass)}</span>
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <span className={`px-3 py-1 rounded-full text-white text-xs font-semibold ${getTypeColor(move.type)}`}>
+                <span className={`px-3 py-1 rounded-full text-white text-xs font-semibold font-mono ${getTypeColor(move.type)}`}>
                   {capitalizeName(move.type)}
                 </span>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+            <div className="p-4 space-y-3">
               {/* Stats */}
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
-                  <p className="text-[color:var(--muted)]">Poder</p>
-                  <p className="font-semibold text-[color:var(--text)]">
+                  <p className="text-neutral-500 font-mono uppercase text-xs">Poder</p>
+                  <p className="font-semibold text-pokedex-neon font-mono">
                     {move.power || '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[color:var(--muted)]">Precisión</p>
-                  <p className="font-semibold text-[color:var(--text)]">
+                  <p className="text-neutral-500 font-mono uppercase text-xs">Precisión</p>
+                  <p className="font-semibold text-pokedex-neon font-mono">
                     {move.accuracy ? `${move.accuracy}%` : '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[color:var(--muted)]">PP</p>
-                  <p className="font-semibold text-[color:var(--text)]">{move.pp}</p>
+                  <p className="text-neutral-500 font-mono uppercase text-xs">PP</p>
+                  <p className="font-semibold text-pokedex-neon font-mono">{move.pp}</p>
                 </div>
                 <div>
-                  <p className="text-[color:var(--muted)]">Prioridad</p>
-                  <p className="font-semibold text-[color:var(--text)]">
+                  <p className="text-neutral-500 font-mono uppercase text-xs">Prioridad</p>
+                  <p className="font-semibold text-pokedex-neon font-mono">
                     {move.priority > 0 ? `+${move.priority}` : move.priority}
                   </p>
                 </div>
@@ -306,30 +308,30 @@ export default function MovesPage() {
 
               {/* Efecto */}
               <div>
-                <p className="text-xs text-[color:var(--muted)] line-clamp-2">
+                <p className="text-xs text-neutral-400 line-clamp-2 font-mono">
                   {move.effect}
                 </p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Sin resultados */}
       {moves.length === 0 && !loading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-[color:var(--muted)]">
+        <div className="pokedex-panel">
+          <div className="py-12 text-center">
+            <p className="text-neutral-500 font-mono">
               No se encontraron movimientos con los filtros seleccionados
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Indicador de fin de lista */}
       {!hasMore && moves.length > 0 && (
         <div className="text-center py-8">
-          <p className="text-sm text-[color:var(--muted)]">
+          <p className="text-sm text-neutral-500 font-mono">
             ✅ Has visto todos los movimientos ({total} en total)
           </p>
         </div>
@@ -339,7 +341,7 @@ export default function MovesPage() {
       {loadingMore && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-48" />
+            <div key={i} className="h-48 bg-neutral-800/50 animate-pulse rounded"></div>
           ))}
         </div>
       )}

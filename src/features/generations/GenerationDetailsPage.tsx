@@ -1,10 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { generationsApi, type GenerationWithPokemon, type Generation } from '@/shared/api/generations.api'
-import { Card } from '@/shared/components/ui/card'
-import { Skeleton } from '@/shared/components/ui/skeleton'
-import { Button } from '@/shared/components/ui/button'
-import ErrorPage from '@/shared/components/ErrorPage'
+import { TypeBadge } from '@/shared/components/neodex'
 
 export default function GenerationDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -36,21 +33,18 @@ export default function GenerationDetailsPage() {
       // Luego cargar los pokemon de la generación
       const data = await generationsApi.getById(generationId)
       console.log('✅ Datos de la generación recibidos:', data)
-      console.log('📊 Total de Pokémon:', data.pokemon?.length)
-      console.log('🎨 Primer pokemon completo:', data.pokemon?.[0])
-      console.log('🖼️ Sprites del primer pokemon:', data.pokemon?.[0]?.sprites)
       setGeneration(data)
     } catch (err: any) {
       console.error('❌ Error loading generation:', err)
       
       if (err.code === 'ECONNABORTED') {
-        setError('La petición tardó demasiado. El servidor puede estar procesando muchos datos.')
+        setError('Request timeout. Server may be processing too much data.')
       } else if (err.response) {
-        setError(`Error del servidor: ${err.response.status} - ${err.response.statusText}`)
+        setError(`Server error: ${err.response.status}`)
       } else if (err.request) {
-        setError('No se pudo conectar con el servidor. Verifica que el backend esté corriendo.')
+        setError('Cannot connect to server. Check backend is running.')
       } else {
-        setError('Error al cargar la generación')
+        setError('Error loading generation data')
       }
     } finally {
       setLoading(false)
@@ -61,47 +55,31 @@ export default function GenerationDetailsPage() {
     navigate(`/pokemon/${pokemonId}`)
   }
 
-  // Colores de tipos de Pokémon
-  const typeColors: Record<string, string> = {
-    normal: 'bg-gray-400',
-    fire: 'bg-orange-500',
-    water: 'bg-blue-500',
-    electric: 'bg-yellow-400',
-    grass: 'bg-green-500',
-    ice: 'bg-cyan-400',
-    fighting: 'bg-red-600',
-    poison: 'bg-purple-500',
-    ground: 'bg-yellow-600',
-    flying: 'bg-indigo-400',
-    psychic: 'bg-pink-500',
-    bug: 'bg-lime-500',
-    rock: 'bg-yellow-700',
-    ghost: 'bg-purple-700',
-    dragon: 'bg-indigo-600',
-    dark: 'bg-gray-700',
-    steel: 'bg-gray-500',
-    fairy: 'bg-pink-400',
-  }
-
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <Skeleton className="h-8 w-32 mb-6" />
-        <Skeleton className="h-12 w-64 mb-8" />
+      <div className="space-y-6">
+        <div className="pokedex-panel p-4">
+          <div className="h-8 w-32 bg-neutral-800/50 rounded animate-pulse mb-4"></div>
+          <div className="h-10 w-64 bg-neutral-800/50 rounded animate-pulse mb-2"></div>
+          <div className="h-4 w-48 bg-neutral-800/30 rounded animate-pulse"></div>
+        </div>
         
-        <div className="text-center py-12 mb-8">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--btn-bg)] mb-4"></div>
-          <p className="text-[color:var(--muted)] text-lg">
-            Cargando Pokémon de la generación...
+        <div className="pokedex-panel p-12 text-center">
+          <div className="relative inline-block mb-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-neutral-800 border-t-pokedex-neon"></div>
+            <div className="absolute inset-0 rounded-full bg-pokedex-neon/20 blur-xl"></div>
+          </div>
+          <p className="text-neutral-400 font-mono text-sm mb-2">
+            LOADING POKÉMON DATA...
           </p>
-          <p className="text-[color:var(--muted)] text-sm mt-2">
-            Esto puede tardar unos segundos
+          <p className="text-neutral-600 font-mono text-xs">
+            This may take a few seconds
           </p>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
           {[...Array(20)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
+            <div key={i} className="pokedex-panel h-48 animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -110,100 +88,136 @@ export default function GenerationDetailsPage() {
 
   if (error || !generation) {
     return (
-      <ErrorPage
-        title="Error al cargar la generación"
-        message={error || 'No pudimos cargar los Pokémon de esta generación. Por favor, intenta nuevamente.'}
-        showLogout={false}
-      />
+      <div className="space-y-6">
+        <button
+          onClick={() => navigate('/generations')}
+          className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg 
+                   transition-colors font-mono text-sm border border-neutral-700"
+        >
+          ← Back to Generations
+        </button>
+        
+        <div className="pokedex-panel p-12 text-center">
+          <div className="text-6xl mb-4 opacity-30">⚠️</div>
+          <h2 className="text-xl font-display tracking-wider text-pokedex-neon mb-2">
+            ERROR LOADING GENERATION
+          </h2>
+          <p className="text-neutral-400 mb-6 font-mono text-sm">
+            {error || 'Could not load Pokémon data. Please try again.'}
+          </p>
+          <button
+            onClick={() => id && loadGeneration(parseInt(id))}
+            className="px-6 py-3 bg-pokedex-neon/20 hover:bg-pokedex-neon/30 text-pokedex-neon rounded-lg 
+                     transition-all font-mono border-2 border-pokedex-neon/60"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
     )
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <Button onClick={() => navigate('/')} variant="outline" className="mb-6">
-        ← Volver a Generaciones
-      </Button>
+  const genNumber = generation.generation
+  const genName = generationInfo?.name ? generationInfo.name.replace(/-/g, ' ').toUpperCase() : `GENERATION ${genNumber}`
+  const regionName = generationInfo?.region || generation.info?.region || 'UNKNOWN REGION'
+  const pokemonCount = generationInfo?.pokemonCount || generation.pokemonCount || 0
 
-      <div className="mb-8">
-        <div className="flex items-center gap-4 mb-4">
-          <h1 className="text-4xl font-bold text-[color:var(--text)] capitalize">
-            {generationInfo?.name ? generationInfo.name.replace(/-/g, ' ') : `Generación ${generation.generation}`}
+  return (
+    <div className="space-y-6">
+      {/* Back button + Header */}
+      <div className="pokedex-panel p-4">
+        <button
+          onClick={() => navigate('/generations')}
+          className="mb-4 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg 
+                   transition-colors font-mono text-xs border border-neutral-700"
+        >
+          ← BACK
+        </button>
+
+        <div className="flex flex-wrap items-center gap-3 mb-3">
+          <h1 className="font-display text-2xl md:text-3xl tracking-wider text-pokedex-neon">
+            {genName}
           </h1>
-          <span className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-full text-sm font-semibold">
-            GEN {generation.generation}
+          <span className="px-3 py-1 bg-pokedex-neon/20 text-pokedex-neon rounded-lg text-xs font-mono font-bold border border-pokedex-neon/40">
+            GEN {genNumber}
           </span>
         </div>
-        <p className="text-[color:var(--muted)] text-lg">
-          {generationInfo?.region || generation.info?.region || 'Región desconocida'} • {generationInfo?.pokemonCount || generation.pokemonCount || 0} Pokémon
+        <p className="text-neutral-400 font-mono text-sm">
+          {regionName} • {pokemonCount} POKÉMON
         </p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {/* Grid de Pokémon */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {generation.pokemon && generation.pokemon.length > 0 ? (
           generation.pokemon.map((pokemon) => {
-            // Usar artwork oficial si está disponible, sino sprite normal
             const imageUrl = pokemon.sprites?.other?.['official-artwork']?.front_default 
               || pokemon.sprites?.front_default
               || '/placeholder-pokemon.png'
             
             return (
-              <Card
+              <div
                 key={pokemon.id}
-                className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-2 hover:border-[color:var(--btn-bg)]"
+                className="group cursor-pointer transition-all duration-200 hover:-translate-y-1"
                 onClick={() => handlePokemonClick(pokemon.id)}
               >
-                <div className="p-4">
-                  <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+                <div className="pokedex-panel p-3 h-full hover:ring-2 hover:ring-pokedex-neon/60 transition-all">
+                  {/* Sprite container */}
+                  <div className="aspect-square bg-neutral-900/50 rounded-lg mb-3 flex items-center justify-center overflow-hidden
+                                border border-neutral-800 group-hover:border-pokedex-neon/40 transition-colors">
                     <img
                       src={imageUrl}
                       alt={pokemon.name}
-                      className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
+                      className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-200"
                       loading="lazy"
                       onError={(e) => {
-                        console.log('Error cargando imagen para:', pokemon.name, imageUrl)
                         e.currentTarget.src = '/placeholder-pokemon.png'
                       }}
                     />
                   </div>
                   
+                  {/* Info */}
                   <div className="text-center">
-                    <p className="text-xs text-gray-500 font-semibold mb-1">
-                      N° {pokemon.id.toString().padStart(3, '0')}
+                    <p className="text-[10px] text-neutral-500 font-mono font-semibold mb-1">
+                      #{pokemon.id.toString().padStart(4, '0')}
                     </p>
-                    <h3 className="font-bold text-gray-800 capitalize mb-2 truncate">
+                    <h3 className="font-semibold text-sm text-neutral-200 capitalize mb-2 truncate">
                       {pokemon.name}
                     </h3>
                     
+                    {/* Type badges */}
                     <div className="flex gap-1 justify-center flex-wrap">
                       {pokemon.types && pokemon.types.map((type, index) => {
-                        // Manejar ambos formatos: string o {name: string, slot: number}
                         const typeName = typeof type === 'string' ? type : type?.name
                         if (!typeName) return null
                         return (
-                          <span
-                            key={`${typeName}-${index}`}
-                            className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
-                              typeColors[typeName.toLowerCase()] || 'bg-gray-400'
-                            }`}
-                          >
-                            {typeName}
-                          </span>
+                          <TypeBadge key={`${typeName}-${index}`} type={typeName} size="sm" />
                         )
                       })}
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             )
           })
         ) : (
-          <div className="col-span-full text-center py-12">
-            <p className="text-[color:var(--muted)] text-lg">
-              No se encontraron Pokémon para esta generación
+          <div className="col-span-full pokedex-panel p-12 text-center">
+            <div className="text-6xl mb-4 opacity-30">❓</div>
+            <p className="text-neutral-400 font-mono text-sm">
+              NO POKÉMON FOUND IN THIS GENERATION
             </p>
           </div>
         )}
       </div>
+
+      {/* Footer stats */}
+      {generation.pokemon && generation.pokemon.length > 0 && (
+        <div className="pokedex-panel p-4 text-center">
+          <p className="text-xs text-neutral-500 font-mono">
+            💾 SHOWING {generation.pokemon.length} POKÉMON FROM GENERATION {genNumber}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
