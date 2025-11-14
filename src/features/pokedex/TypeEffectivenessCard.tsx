@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import {
   pokemonTypes,
   analizarTipo,
@@ -59,50 +58,55 @@ export default function TypeEffectivenessCard({ types }: TypeEffectivenessCardPr
     : null
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader 
-        className="cursor-pointer hover:bg-[color:var(--surface-2)] transition-colors"
+    <div className="pokedex-panel overflow-hidden">
+      <div 
+        className="pokedex-panel-header cursor-pointer hover:bg-neutral-800/50 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg flex items-center gap-2">
-            ⚔️ Efectividad de Tipos
-          </CardTitle>
+          <h3 className="panel-title flex items-center gap-2">
+            ⚔️ TYPE EFFECTIVENESS
+          </h3>
           <div className="flex items-center gap-2">
             {/* Mostrar tipos */}
             {typeData1 && (
-              <div className={`${typeData1.color} text-white px-2 py-1 rounded text-xs flex items-center gap-1`}>
+              <div className={`${typeData1.color} text-white px-2 py-1 rounded text-xs flex items-center gap-1 text-terminal`}>
                 <span>{typeData1.emoji}</span>
                 <span>{typeData1.name}</span>
               </div>
             )}
             {typeData2 && (
-              <div className={`${typeData2.color} text-white px-2 py-1 rounded text-xs flex items-center gap-1`}>
+              <div className={`${typeData2.color} text-white px-2 py-1 rounded text-xs flex items-center gap-1 text-terminal`}>
                 <span>{typeData2.emoji}</span>
                 <span>{typeData2.name}</span>
               </div>
             )}
-            <span className="text-2xl transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-              ▼
-            </span>
+            <svg 
+              className={`w-6 h-6 transition-transform duration-200 text-neon ${isOpen ? 'rotate-180' : ''}`}
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
         </div>
-      </CardHeader>
+      </div>
 
       {isOpen && (
-        <CardContent className="p-4">
+        <div className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Columna: Al Atacar */}
             <div className="space-y-2">
-              <div className="bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--primary-600)] text-white py-2 px-3 rounded-lg">
-                <h3 className="text-sm font-bold">⚔️ Al Atacar</h3>
+              <div className="bg-gradient-to-r from-pokedex-red to-red-600 text-white py-2 px-3 rounded-lg">
+                <h3 className="text-sm font-bold font-display tracking-wider">⚔️ ATTACKING</h3>
               </div>
               
               {spanishTypes.length > 1 ? (
                 // Vista dividida para tipo dual
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-[color:var(--muted)] text-center">
+                    <p className="stat-label text-center">
                       {spanishTypes[0]}
                     </p>
                     <div className="space-y-1 max-h-[300px] overflow-y-auto">
@@ -123,7 +127,7 @@ export default function TypeEffectivenessCard({ types }: TypeEffectivenessCardPr
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs font-bold text-[color:var(--muted)] text-center">
+                    <p className="stat-label text-center">
                       {spanishTypes[1]}
                     </p>
                     <div className="space-y-1 max-h-[300px] overflow-y-auto">
@@ -172,8 +176,8 @@ export default function TypeEffectivenessCard({ types }: TypeEffectivenessCardPr
 
             {/* Columna: Al Defender */}
             <div className="space-y-2">
-              <div className="bg-gradient-to-r from-[color:var(--accent)] to-[color:var(--accent-700)] text-white py-2 px-3 rounded-lg">
-                <h3 className="text-sm font-bold">🛡️ Al Defender</h3>
+              <div className="bg-gradient-to-r from-pokedex-neon to-cyan-600 text-white py-2 px-3 rounded-lg">
+                <h3 className="text-sm font-bold font-display tracking-wider">🛡️ DEFENDING</h3>
               </div>
               
               <div className="space-y-1 max-h-[400px] overflow-y-auto">
@@ -201,15 +205,15 @@ export default function TypeEffectivenessCard({ types }: TypeEffectivenessCardPr
           </div>
 
           {/* Leyenda */}
-          <div className="mt-4 pt-4 border-t border-[color:var(--card-border)]">
-            <p className="text-xs text-[color:var(--muted)] text-center">
-              <span className="text-green-600 dark:text-green-400 font-bold">Verde</span> = Súper efectivo • 
-              <span className="text-red-600 dark:text-red-400 font-bold"> Rojo</span> = Poco efectivo • 
-              <span className="text-gray-400 font-bold"> Gris</span> = No afecta
+          <div className="mt-4 pt-4 border-t border-terminal">
+            <p className="text-terminal text-xs text-neutral-500 text-center">
+              <span className="text-green-400 font-bold">Verde</span> = Súper efectivo • 
+              <span className="text-red-400 font-bold"> Rojo</span> = Poco efectivo • 
+              <span className="text-gray-500 font-bold"> Gris</span> = No afecta
             </p>
           </div>
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   )
 }

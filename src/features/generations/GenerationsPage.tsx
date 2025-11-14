@@ -1,9 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { generationsApi, type Generation } from '@/shared/api/generations.api'
-import { Card } from '@/shared/components/ui/card'
-import { Skeleton } from '@/shared/components/ui/skeleton'
-import ErrorPage from '@/shared/components/ErrorPage'
 
 export default function GenerationsPage() {
   const [generations, setGenerations] = useState<Generation[]>([])
@@ -34,28 +31,29 @@ export default function GenerationsPage() {
     navigate(`/generation/${generationId}`)
   }
 
-  // Mapeo de colores por generación
-  const generationColors: Record<number, { bg: string; border: string; hover: string }> = {
-    1: { bg: 'bg-red-50', border: 'border-red-300', hover: 'hover:border-red-500' },
-    2: { bg: 'bg-yellow-50', border: 'border-yellow-300', hover: 'hover:border-yellow-500' },
-    3: { bg: 'bg-green-50', border: 'border-green-300', hover: 'hover:border-green-500' },
-    4: { bg: 'bg-blue-50', border: 'border-blue-300', hover: 'hover:border-blue-500' },
-    5: { bg: 'bg-purple-50', border: 'border-purple-300', hover: 'hover:border-purple-500' },
-    6: { bg: 'bg-pink-50', border: 'border-pink-300', hover: 'hover:border-pink-500' },
-    7: { bg: 'bg-orange-50', border: 'border-orange-300', hover: 'hover:border-orange-500' },
-    8: { bg: 'bg-indigo-50', border: 'border-indigo-300', hover: 'hover:border-indigo-500' },
-    9: { bg: 'bg-teal-50', border: 'border-teal-300', hover: 'hover:border-teal-500' },
+  // Colores y regiones por generación
+  const generationInfo: Record<number, { color: string; region: string; emoji: string }> = {
+    1: { color: 'from-red-600 to-red-800', region: 'KANTO', emoji: '🔴' },
+    2: { color: 'from-yellow-600 to-yellow-800', region: 'JOHTO', emoji: '🟡' },
+    3: { color: 'from-green-600 to-green-800', region: 'HOENN', emoji: '🟢' },
+    4: { color: 'from-blue-600 to-blue-800', region: 'SINNOH', emoji: '🔵' },
+    5: { color: 'from-purple-600 to-purple-800', region: 'UNOVA', emoji: '🟣' },
+    6: { color: 'from-pink-600 to-pink-800', region: 'KALOS', emoji: '🌸' },
+    7: { color: 'from-orange-600 to-orange-800', region: 'ALOLA', emoji: '🟠' },
+    8: { color: 'from-indigo-600 to-indigo-800', region: 'GALAR', emoji: '⚪' },
+    9: { color: 'from-teal-600 to-teal-800', region: 'PALDEA', emoji: '🟤' },
   }
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-4xl font-bold text-center mb-8 text-[color:var(--text)]">
-          Generaciones Pokémon
-        </h1>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
+        <div className="pokedex-panel p-6">
+          <div className="h-8 w-64 bg-neutral-800/50 rounded animate-pulse mb-2"></div>
+          <div className="h-4 w-96 bg-neutral-800/30 rounded animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(9)].map((_, i) => (
-            <Skeleton key={i} className="h-48 w-full" />
+            <div key={i} className="pokedex-panel h-48 animate-pulse"></div>
           ))}
         </div>
       </div>
@@ -64,61 +62,97 @@ export default function GenerationsPage() {
 
   if (error) {
     return (
-      <ErrorPage
-        title="Error al cargar las generaciones"
-        message="No pudimos cargar la lista de generaciones. Por favor, verifica tu conexión e intenta nuevamente."
-        showLogout={false}
-      />
+      <div className="pokedex-panel p-6 text-center">
+        <div className="text-6xl mb-4 opacity-30">⚠️</div>
+        <h2 className="text-xl font-display tracking-wider text-pokedex-neon mb-2">
+          ERROR LOADING DATA
+        </h2>
+        <p className="text-neutral-400 mb-6 font-mono text-sm">
+          {error}
+        </p>
+        <button
+          onClick={loadGenerations}
+          className="px-6 py-3 bg-pokedex-neon/20 hover:bg-pokedex-neon/30 text-pokedex-neon rounded-lg 
+                   transition-all font-mono border-2 border-pokedex-neon/60"
+        >
+          Retry
+        </button>
+      </div>
     )
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-[color:var(--text)] mb-2">
-          Generaciones Pokémon
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="pokedex-panel p-6">
+        <h1 className="font-display text-2xl md:text-3xl tracking-wider text-pokedex-neon mb-2">
+          POKÉMON GENERATIONS
         </h1>
-        <p className="text-[color:var(--muted)] text-lg">
-          Selecciona una generación para explorar sus Pokémon
+        <p className="text-sm text-neutral-400 font-mono">
+          SELECT A GENERATION TO EXPLORE
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto"> 
-
-        {/* Generaciones existentes */}
+      {/* Grid de generaciones */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {generations.map((generation) => {
-          const colors = generationColors[generation.id] || generationColors[1]
+          const info = generationInfo[generation.id] || generationInfo[1]
           const pokemonCount = typeof generation.pokemonCount === 'string' 
             ? parseInt(generation.pokemonCount) 
             : generation.pokemonCount
           
           return (
-            <Card
+            <button
               key={generation.id}
-              className={`${colors.bg} border-2 ${colors.border} ${colors.hover} cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1`}
               onClick={() => handleGenerationClick(generation.id)}
+              className="group pokedex-panel overflow-hidden hover:ring-2 hover:ring-pokedex-neon/60 transition-all text-left"
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-sm font-semibold text-gray-500">
-                    GEN {generation.id}
+              {/* Header con gradiente de color */}
+              <div className={`bg-gradient-to-br ${info.color} p-4 border-b-2 border-neutral-900`}>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-white/70 font-mono text-xs font-semibold tracking-wider">
+                    GENERATION {generation.id}
                   </span>
-                  <span className="px-3 py-1 bg-white rounded-full text-sm font-medium text-gray-700">
-                    {pokemonCount} Pokémon
+                  <span className="text-3xl">{info.emoji}</span>
+                </div>
+                <h2 className="text-white font-display text-xl tracking-wider mb-1">
+                  {info.region}
+                </h2>
+                <div className="flex items-center gap-2">
+                  <div className="h-1 flex-1 bg-white/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-white/60 rounded-full" style={{ width: '100%' }}></div>
+                  </div>
+                  <span className="text-white/90 font-mono text-xs font-semibold">
+                    {pokemonCount}
                   </span>
                 </div>
-                
-                <h2 className="text-2xl font-bold text-gray-800 mb-2 capitalize">
-                  {generation.name.replace(/-/g, ' ')}
-                </h2>
-                
-                <p className="text-gray-600 font-medium mb-4">
-                  {generation.region}
-                </p>
               </div>
-            </Card>
+
+              {/* Footer */}
+              <div className="p-4 bg-neutral-900/50 flex items-center justify-between">
+                <span className="text-neutral-400 font-mono text-xs">
+                  {generation.name.replace(/-/g, ' ').toUpperCase()}
+                </span>
+                <span className="text-pokedex-neon/50 group-hover:text-pokedex-neon group-hover:translate-x-1 transition-all">
+                  →
+                </span>
+              </div>
+            </button>
           )
         })}
+      </div>
+
+      {/* Stats footer */}
+      <div className="pokedex-panel p-4 text-center">
+        <p className="text-xs text-neutral-500 font-mono">
+          💾 DATABASE: {generations.length} GENERATIONS LOADED | 
+          {' '}{generations.reduce((acc, gen) => {
+            const count = typeof gen.pokemonCount === 'string' 
+              ? parseInt(gen.pokemonCount) 
+              : gen.pokemonCount
+            return acc + count
+          }, 0)} TOTAL POKÉMON
+        </p>
       </div>
     </div>
   )

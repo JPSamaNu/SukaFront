@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { Card, CardContent } from '@/shared/components/ui/card'
 import type { PokemonSummary } from '@/shared/types/pokemon'
 
 interface PokemonCardProps {
@@ -40,11 +39,11 @@ export default function PokemonCard({ pokemon }: PokemonCardProps) {
 
   return (
     <Link to={`/generation/${pokemon.name}`} className="group">
-      <Card className="transition-all duration-200 hover:shadow-xl hover:scale-105 group-hover:shadow-theme-primary/20">
-        <CardContent className="p-4">
+      <div className="pokedex-panel hover-lift hover:shadow-xl hover:shadow-pokedex-neon/20">
+        <div className="p-4">
           {/* Imagen del Pokemon */}
           <div className="relative mb-3">
-            <div className="aspect-square w-full bg-gradient-to-br from-theme-background to-theme-muted rounded-lg flex items-center justify-center overflow-hidden">
+            <div className="aspect-square w-full bg-gradient-to-br from-neutral-900 to-neutral-800 rounded-lg flex items-center justify-center overflow-hidden border-terminal">
               {pokemon.image ? (
                 <img
                   src={pokemon.image}
@@ -53,21 +52,21 @@ export default function PokemonCard({ pokemon }: PokemonCardProps) {
                   loading="lazy"
                 />
               ) : (
-                <div className="w-16 h-16 bg-theme-muted rounded-full flex items-center justify-center">
-                  <span className="text-2xl">?</span>
+                <div className="w-16 h-16 bg-panel rounded-full flex items-center justify-center">
+                  <span className="text-2xl text-neutral-600">?</span>
                 </div>
               )}
             </div>
             
             {/* Número de Pokémon */}
-            <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+            <div className="badge-neon absolute top-2 right-2 bg-black/70">
               #{pokemonNumber}
             </div>
           </div>
 
           {/* Información del Pokemon */}
           <div className="text-center">
-            <h3 className="font-semibold text-theme-foreground text-sm mb-1">
+            <h3 className="text-display text-neutral-200 text-sm mb-1">
               {capitalizedName}
             </h3>
             
@@ -76,8 +75,8 @@ export default function PokemonCard({ pokemon }: PokemonCardProps) {
               <span className={`inline-block w-2 h-2 rounded-full ${getTypeColor()}`}></span>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   )
 }

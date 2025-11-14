@@ -1,4 +1,3 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
 import {
   pokemonTypes,
   sortByRelevance,
@@ -25,16 +24,16 @@ export default function EffectivenessColumns({
   return (
     <div className="grid grid-cols-2 gap-2">
       {/* Columna: Al Atacar */}
-      <Card className="h-[calc(100vh-240px)] flex flex-col">
-        <CardHeader className="bg-gradient-to-r from-[color:var(--primary)] to-[color:var(--primary-600)] text-white py-2 px-3">
-          <CardTitle className="text-sm">⚔️ Al Atacar</CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 flex-1 overflow-y-auto">
+      <div className="pokedex-panel h-[calc(100vh-240px)] flex flex-col">
+        <div className="bg-gradient-to-r from-pokedex-red to-red-600 text-white py-2 px-3 border-b border-white/20">
+          <h3 className="text-sm font-display tracking-wider uppercase">⚔️ Al Atacar</h3>
+        </div>
+        <div className="p-2 flex-1 overflow-y-auto">
           {selectedType2 ? (
             // Vista dividida para tipo dual
             <div className="grid grid-cols-2 gap-1">
               <div className="space-y-1">
-                <p className="text-xs font-bold text-[color:var(--muted)] mb-1 text-center">
+                <p className="text-xs font-bold text-neutral-400 mb-1 text-center font-mono uppercase">
                   {selectedType?.name}
                 </p>
                 {sortByRelevance(effectiveness?.atacando || []).map((item) => {
@@ -47,7 +46,7 @@ export default function EffectivenessColumns({
                       <div className="flex items-center gap-1">
                         <span className="text-xs">{typeData?.emoji}</span>
                       </div>
-                      <span className={`text-xs font-bold ${getMultiplierColor(item.multiplicador)}`}>
+                      <span className={`text-xs font-bold font-mono ${getMultiplierColor(item.multiplicador)}`}>
                         ×{item.multiplicador}
                       </span>
                     </div>
@@ -55,7 +54,7 @@ export default function EffectivenessColumns({
                 })}
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-bold text-[color:var(--muted)] mb-1 text-center">
+                <p className="text-xs font-bold text-neutral-400 mb-1 text-center font-mono uppercase">
                   {selectedType2?.name}
                 </p>
                 {sortByRelevance(effectiveness2?.atacando || []).map((item) => {
@@ -68,7 +67,7 @@ export default function EffectivenessColumns({
                       <div className="flex items-center gap-1">
                         <span className="text-xs">{typeData?.emoji}</span>
                       </div>
-                      <span className={`text-xs font-bold ${getMultiplierColor(item.multiplicador)}`}>
+                      <span className={`text-xs font-bold font-mono ${getMultiplierColor(item.multiplicador)}`}>
                         ×{item.multiplicador}
                       </span>
                     </div>
@@ -88,11 +87,11 @@ export default function EffectivenessColumns({
                   >
                     <div className="flex items-center gap-1.5">
                       <span className="text-sm">{typeData?.emoji}</span>
-                      <span className={`text-xs font-medium ${getMultiplierColor(item.multiplicador)}`}>
+                      <span className={`text-xs font-medium font-mono ${getMultiplierColor(item.multiplicador)}`}>
                         {item.tipo}
                       </span>
                     </div>
-                    <span className={`text-xs font-bold ${getMultiplierColor(item.multiplicador)}`}>
+                    <span className={`text-xs font-bold font-mono ${getMultiplierColor(item.multiplicador)}`}>
                       ×{item.multiplicador}
                     </span>
                   </div>
@@ -100,15 +99,15 @@ export default function EffectivenessColumns({
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Columna: Al Defender */}
-      <Card className="h-[calc(100vh-240px)] flex flex-col">
-        <CardHeader className="bg-gradient-to-r from-[color:var(--accent)] to-[color:var(--accent-700)] text-white py-2 px-3">
-          <CardTitle className="text-sm">🛡️ Al Defender</CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 flex-1 overflow-y-auto">
+      <div className="pokedex-panel h-[calc(100vh-240px)] flex flex-col">
+        <div className="bg-gradient-to-r from-pokedex-neon to-cyan-600 text-white py-2 px-3 border-b border-white/20">
+          <h3 className="text-sm font-display tracking-wider uppercase">🛡️ Al Defender</h3>
+        </div>
+        <div className="p-2 flex-1 overflow-y-auto">
           <div className="space-y-1">
             {sortByRelevance(selectedType2 ? combinedDefense || [] : effectiveness?.defendiendo || []).map((item) => {
               const typeData = pokemonTypes.find(t => t.name === item.tipo)
@@ -119,19 +118,19 @@ export default function EffectivenessColumns({
                 >
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">{typeData?.emoji}</span>
-                    <span className={`text-xs font-medium ${getMultiplierColor(item.multiplicador)}`}>
+                    <span className={`text-xs font-medium font-mono ${getMultiplierColor(item.multiplicador)}`}>
                       {item.tipo}
                     </span>
                   </div>
-                  <span className={`text-xs font-bold ${getMultiplierColor(item.multiplicador)}`}>
+                  <span className={`text-xs font-bold font-mono ${getMultiplierColor(item.multiplicador)}`}>
                     ×{item.multiplicador}
                   </span>
                 </div>
               )
             })}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

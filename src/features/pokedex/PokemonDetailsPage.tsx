@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Button } from '@/shared/components/ui/button'
-import { Skeleton } from '@/shared/components/ui/skeleton'
 import { pokemonApi } from '@/shared/api/pokemon.api'
 import type { Pokemon } from '@/shared/types/pokemon'
+import { TypeBadge } from '@/shared/components/neodex'
 import TypeEffectivenessCard from './TypeEffectivenessCard'
-import ErrorPage from '@/shared/components/ErrorPage'
 
 export default function PokemonDetailsPage() {
   const { id } = useParams<{ id: string }>()
@@ -301,26 +298,22 @@ export default function PokemonDetailsPage() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Skeleton className="h-10 w-32" />
-          <Skeleton className="h-8 w-48" />
+        <div className="pokedex-panel p-4">
+          <div className="skeleton h-10 w-32 mb-2"></div>
+          <div className="skeleton h-8 w-48"></div>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
-            <CardContent className="p-6">
-              <Skeleton className="aspect-square w-full max-w-md mx-auto" />
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6 space-y-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-16" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="pokedex-panel p-6">
+            <div className="skeleton aspect-square w-full max-w-md mx-auto"></div>
+          </div>
+          <div className="pokedex-panel p-6 space-y-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex justify-between">
+                <div className="skeleton h-4 w-24"></div>
+                <div className="skeleton h-4 w-16"></div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     )
@@ -328,11 +321,24 @@ export default function PokemonDetailsPage() {
 
   if (error || !pokemon) {
     return (
-      <ErrorPage
-        title="Pokémon no encontrado"
-        message={error || 'No pudimos encontrar el Pokémon que buscas. Puede que no exista o que haya ocurrido un error.'}
-        showLogout={false}
-      />
+      <div className="space-y-6">
+        <button onClick={() => navigate(-1)} className="btn-secondary">
+          ← BACK
+        </button>
+        
+        <div className="pokedex-panel p-12 text-center">
+          <div className="text-6xl mb-4 opacity-30">❌</div>
+          <h2 className="text-xl text-display text-neon mb-2">
+            POKÉMON NOT FOUND
+          </h2>
+          <p className="text-neutral-400 mb-6 text-terminal text-sm">
+            {error || 'Pokémon does not exist or an error occurred.'}
+          </p>
+          <button onClick={() => navigate('/pokemon')} className="btn-sukadex">
+            Go to Pokédex
+          </button>
+        </div>
+      </div>
     )
   }
 
@@ -353,32 +359,34 @@ export default function PokemonDetailsPage() {
   return (
     <div className="space-y-6">
       {/* Navegación */}
-      <div className="flex items-center space-x-4">
-        <Button variant="outline" onClick={() => navigate(-1)}>
-          ← Volver
-        </Button>
-        <h1 className="text-2xl font-bold text-theme-foreground">
-          #{pokemonNumber} {capitalizedName}
-        </h1>
+      <div className="pokedex-panel p-4">
+        <button onClick={() => navigate(-1)} className="btn-secondary mb-3 text-xs">
+          ← BACK
+        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-display text-2xl md:text-3xl text-neon">
+            #{pokemonNumber} {capitalizedName.toUpperCase()}
+          </h1>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Imagen y información básica */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Información básica</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+        <div className="pokedex-panel">
+          <div className="pokedex-panel-header">
+            <h3 className="panel-title">Basic Info</h3>
+          </div>
+          <div className="p-6">
             <div className="text-center space-y-4">
               {/* Switch Shiny */}
               <div className="flex items-center justify-center gap-3 mb-4">
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Normal
+                <span className="stat-label">
+                  NORMAL
                 </span>
                 <button
                   onClick={() => setIsShiny(!isShiny)}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
-                    isShiny ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600' : 'bg-gray-300 dark:bg-gray-600'
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-pokedex-neon/40 ${
+                    isShiny ? 'bg-gradient-to-r from-yellow-400 via-pink-500 to-purple-600' : 'bg-neutral-700'
                   }`}
                   role="switch"
                   aria-checked={isShiny}
@@ -389,13 +397,13 @@ export default function PokemonDetailsPage() {
                     } inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform`}
                   />
                 </button>
-                <span className={`text-sm font-medium flex items-center gap-1 ${isShiny ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400'}`}>
-                  ✨ Shiny
+                <span className={`text-xs text-terminal flex items-center gap-1 ${isShiny ? 'text-yellow-400' : 'text-neutral-600'}`}>
+                  ✨ SHINY
                 </span>
               </div>
 
               {/* Imagen principal */}
-              <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-8">
+              <div className="relative bg-neutral-900/50 rounded-xl p-8 border border-neutral-800">
                 {mainImage ? (
                   <>
                     <img
@@ -407,8 +415,8 @@ export default function PokemonDetailsPage() {
                     {/* Botón para expandir imagen */}
                     <button
                       onClick={() => setIsImageModalOpen(true)}
-                      className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                      title="Ver en grande"
+                      className="absolute top-2 right-2 bg-neutral-900/90 hover:bg-neutral-800 text-pokedex-neon p-2 rounded-lg transition-colors border border-neutral-700"
+                      title="View fullscreen"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M3 4a1 1 0 011-1h4a1 1 0 010 2H6.414l2.293 2.293a1 1 0 11-1.414 1.414L5 6.414V8a1 1 0 01-2 0V4zm9 1a1 1 0 010-2h4a1 1 0 011 1v4a1 1 0 01-2 0V6.414l-2.293 2.293a1 1 0 11-1.414-1.414L13.586 5H12zm-9 7a1 1 0 012 0v1.586l2.293-2.293a1 1 0 111.414 1.414L6.414 15H8a1 1 0 010 2H4a1 1 0 01-1-1v-4zm13-1a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 010-2h1.586l-2.293-2.293a1 1 0 111.414-1.414L15 13.586V12a1 1 0 011-1z" />
@@ -416,62 +424,57 @@ export default function PokemonDetailsPage() {
                     </button>
                   </>
                 ) : (
-                  <div className="w-64 h-64 mx-auto bg-theme-muted rounded-xl flex items-center justify-center">
-                    <span className="text-4xl">?</span>
+                  <div className="w-64 h-64 mx-auto bg-neutral-800/50 rounded-xl flex items-center justify-center border border-neutral-700">
+                    <span className="text-4xl text-neutral-600">?</span>
                   </div>
                 )}
               </div>
 
               {/* Tipos */}
-              <div className="flex justify-center gap-3">
+              <div className="flex justify-center gap-3 flex-wrap">
                 {pokemon.types && pokemon.types.length > 0 && pokemon.types.map((type, index) => {
-                  // Manejar ambos formatos: string o {name: string, slot: number}
                   const typeName = typeof type === 'string' ? type : type?.name
                   if (!typeName) return null
                   return (
-                    <span
-                      key={index}
-                      className={`min-w-[120px] px-5 py-2.5 rounded-full text-white text-base font-bold uppercase text-center inline-block ${getTypeColor(typeName)}`}
-                    >
-                      {typeName}
-                    </span>
+                    <TypeBadge key={index} type={typeName} size="md" />
                   )
                 })}
               </div>
 
               {/* Altura y peso */}
               <div className="grid grid-cols-2 gap-4 pt-4">
-                <div className="text-center">
-                  <p className="text-theme-muted-foreground text-sm">Altura</p>
-                  <p className="text-lg font-semibold">{pokemon.height / 10} m</p>
+                <div className="text-center p-3 bg-neutral-900/30 rounded-lg border-terminal">
+                  <p className="stat-label mb-1">HEIGHT</p>
+                  <p className="text-lg font-bold text-neutral-200">{pokemon.height / 10} m</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-theme-muted-foreground text-sm">Peso</p>
-                  <p className="text-lg font-semibold">{pokemon.weight / 10} kg</p>
+                <div className="text-center p-3 bg-neutral-900/30 rounded-lg border-terminal">
+                  <p className="stat-label mb-1">WEIGHT</p>
+                  <p className="text-lg font-bold text-neutral-200">{pokemon.weight / 10} kg</p>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Estadísticas */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Estadísticas base</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+        <div className="pokedex-panel">
+          <div className="pokedex-panel-header">
+            <h3 className="panel-title">
+              Base Stats
+            </h3>
+          </div>
+          <div className="p-6">
             {/* Header con Min y Max */}
             <div className="flex justify-end items-center mb-3 pr-1">
-              <div className="flex items-center gap-4 text-xs font-medium text-theme-muted-foreground">
-                <span>Min</span>
-                <span>Max</span>
+              <div className="flex items-center gap-4 stat-label">
+                <span>MIN</span>
+                <span>MAX</span>
               </div>
             </div>
             
             <div className="space-y-4">
               {pokemon.stats && pokemon.stats.length > 0 && pokemon.stats.map((stat, index) => {
                 const statName = stat?.name || 'unknown'
-                // Manejar ambos formatos: base_stat (snake_case) o baseStat (camelCase)
                 const baseStat = stat?.base_stat ?? stat?.baseStat ?? 0
                 const percentage = Math.min((baseStat / 150) * 100, 100)
                 const { min, max } = calculateStats(baseStat, statName)
@@ -479,10 +482,10 @@ export default function PokemonDetailsPage() {
                   <div key={index}>
                     <div className="flex justify-between items-center gap-4">
                       <div className="flex items-center gap-3 min-w-fit">
-                        <span className="text-sm font-medium text-theme-muted-foreground min-w-[80px]">
+                        <span className="stat-label min-w-[80px]">
                           {formatStatName(statName)}
                         </span>
-                        <span className="font-bold text-theme-foreground w-[36px] text-right">{baseStat}</span>
+                        <span className="stat-value w-[36px] text-right">{baseStat}</span>
                       </div>
                       <div className="flex-1 bg-theme-muted rounded-full h-2">
                         <div
@@ -490,9 +493,9 @@ export default function PokemonDetailsPage() {
                           style={{ width: `${percentage}%` }}
                         ></div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm min-w-fit">
-                        <span className="text-theme-muted-foreground w-[36px] text-right">{min}</span>
-                        <span className="text-theme-muted-foreground w-[36px] text-right">{max}</span>
+                      <div className="flex items-center gap-4 text-xs min-w-fit text-terminal">
+                        <span className="text-neutral-500 w-[36px] text-right">{min}</span>
+                        <span className="text-neutral-500 w-[36px] text-right">{max}</span>
                       </div>
                     </div>
                   </div>
@@ -501,64 +504,64 @@ export default function PokemonDetailsPage() {
             </div>
             
             {/* Total de estadísticas */}
-            <div className="mt-6 pt-4 border-t">
+            <div className="mt-6 pt-4 border-t border-terminal">
               <div className="flex items-center gap-3">
-                <span className="font-medium text-theme-foreground min-w-[80px]">Total</span>
-                <span className="text-lg font-bold">
+                <span className="text-terminal text-sm text-neutral-400 min-w-[80px]">TOTAL</span>
+                <span className="stat-value text-lg">
                   {pokemon.stats?.reduce((total, stat) => total + (stat?.base_stat ?? stat?.baseStat ?? 0), 0) || 0}
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* EVs que otorga */}
       {pokemon.stats && pokemon.stats.some(s => s.effort > 0) && (
-          <Card>
-            <CardHeader>
-              <CardTitle>EVs al derrotar</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+          <div className="pokedex-panel">
+            <div className="pokedex-panel-header">
+              <h3 className="panel-title">Effort Values (EVs)</h3>
+            </div>
+            <div className="p-6">
               <div className="flex flex-wrap gap-3">
                 {pokemon.stats.filter(s => s.effort > 0).map((stat, index) => (
-                  <div key={index} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-theme-accent">
-                    <span className="font-semibold text-theme-primary">+{stat.effort}</span>
-                    <span className="text-theme-foreground capitalize">
+                  <div key={index} className="badge-neon flex items-center gap-2 px-4 py-2">
+                    <span className="stat-value">+{stat.effort}</span>
+                    <span className="text-neutral-200 capitalize text-sm">
                       {formatStatName(stat.name)}
                     </span>
                   </div>
                 ))}
               </div>
-              <p className="text-sm text-theme-muted-foreground mt-4">
-                Puntos de esfuerzo (EVs) que otorga este Pokémon al ser derrotado
+              <p className="text-terminal text-xs text-neutral-500 mt-4">
+                Effort Values (EVs) granted when defeated
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Clasificación */}
         {pokemon.classification && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Clasificación y Cría</CardTitle>
-            </CardHeader>
-            <CardContent className="p-6">
+          <div className="pokedex-panel">
+            <div className="pokedex-panel-header">
+              <h3 className="panel-title">Classification & Breeding</h3>
+            </div>
+            <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Columna izquierda */}
                 <div className="space-y-4">
                   {/* Tipo de Pokémon */}
-                  <div className="flex items-center justify-between py-2 border-b border-theme-border">
-                    <span className="text-theme-muted-foreground">Tipo</span>
+                  <div className="flex items-center justify-between py-2 border-b border-terminal">
+                    <span className="stat-label">TYPE</span>
                     <div className="flex gap-2">
                       {pokemon.classification.isLegendary && (
-                        <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-600 dark:text-yellow-400 text-sm font-semibold">
-                          Legendario
+                        <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-semibold font-mono border border-yellow-500/30">
+                          LEGENDARY
                         </span>
                       )}
                       {pokemon.classification.isMythical && (
-                        <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-600 dark:text-purple-400 text-sm font-semibold">
-                          Mítico
+                        <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-semibold font-mono border border-purple-500/30">
+                          MYTHICAL
                         </span>
                       )}
                       {pokemon.classification.isBaby && (
@@ -688,21 +691,23 @@ export default function PokemonDetailsPage() {
                   )}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )}
 
         {/* Movimientos por nivel */}
         {pokemon.moves && pokemon.moves.length > 0 && (
-          <Card>
-            <CardHeader 
-              className="cursor-pointer hover:bg-theme-accent transition-colors"
+          <div className="pokedex-panel">
+            <div 
+              className="pokedex-panel-header cursor-pointer hover:bg-neutral-800/50 transition-colors"
               onClick={() => setIsMovesExpanded(!isMovesExpanded)}
             >
               <div className="flex items-center justify-between">
-                <CardTitle>Movimientos por nivel ({pokemon.moves.length})</CardTitle>
+                <h3 className="panel-title">
+                  LEVEL-UP MOVES ({pokemon.moves.length})
+                </h3>
                 <svg 
-                  className={`w-6 h-6 transition-transform duration-200 ${isMovesExpanded ? 'rotate-180' : ''}`}
+                  className={`w-6 h-6 transition-transform duration-200 text-neon ${isMovesExpanded ? 'rotate-180' : ''}`}
                   fill="none" 
                   stroke="currentColor" 
                   viewBox="0 0 24 24"
@@ -710,9 +715,9 @@ export default function PokemonDetailsPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </div>
-            </CardHeader>
+            </div>
             {isMovesExpanded && (
-              <CardContent className="p-6">
+              <div className="p-6">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -767,9 +772,9 @@ export default function PokemonDetailsPage() {
                     </tbody>
                   </table>
                 </div>
-              </CardContent>
+              </div>
             )}
-          </Card>
+          </div>
         )}
 
       {/* Efectividad de Tipos */}
@@ -781,11 +786,11 @@ export default function PokemonDetailsPage() {
 
       {/* Cadena de evolución */}
       {!loadingEvolution && evolutionChain && evolutionChain.chain && evolutionChain.chain.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Cadena de evolución</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6">
+        <div className="pokedex-panel">
+          <div className="pokedex-panel-header">
+            <h3 className="panel-title">EVOLUTION CHAIN</h3>
+          </div>
+          <div className="p-6">
             <div className="flex flex-wrap items-center justify-center gap-4">
               {evolutionChain.chain.map((baseChain, idx) => (
                 <div key={idx} className="flex flex-wrap items-center justify-center gap-4">
@@ -793,17 +798,19 @@ export default function PokemonDetailsPage() {
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Formas Alternativas */}
       {pokemonForms && (pokemonForms.megaEvolutions.length > 0 || pokemonForms.regionalForms.length > 0 || pokemonForms.otherForms.length > 0) && (
-        <Card>
-          <CardHeader>
-            <CardTitle>✨ Formas Alternativas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <div className="pokedex-panel">
+          <div className="pokedex-panel-header">
+            <h3 className="panel-title">
+              ✨ ALTERNATE FORMS
+            </h3>
+          </div>
+          <div className="space-y-6">
             {/* Mega Evoluciones */}
             {pokemonForms.megaEvolutions.length > 0 && (
               <div>
@@ -906,8 +913,8 @@ export default function PokemonDetailsPage() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Ubicaciones de Captura */}
@@ -921,39 +928,39 @@ export default function PokemonDetailsPage() {
 
         if (totalFilteredEncounters === 0 && gameContext?.fromGame) {
           return (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  Ubicaciones de Captura
+            <div className="pokedex-panel">
+              <div className="pokedex-panel-header">
+                <h3 className="panel-title flex items-center gap-2">
+                  CAPTURE LOCATIONS
                   {gameContext.versionGroupName && (
-                    <span className="text-sm font-normal text-[color:var(--muted)]">
+                    <span className="text-terminal text-xs text-neutral-500">
                       • {capitalizeName(gameContext.versionGroupName)}
                     </span>
                   )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-[color:var(--muted)]">
+                </h3>
+              </div>
+              <div>
+                <div className="text-center py-8 text-neutral-500 text-terminal">
                   <p>Este Pokémon no está disponible en {capitalizeName(gameContext.versionGroupName || 'este juego')}</p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )
         }
 
         return (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Ubicaciones de Captura
+          <div className="pokedex-panel">
+            <div className="pokedex-panel-header">
+              <h3 className="panel-title flex items-center gap-2">
+                CAPTURE LOCATIONS
                 {gameContext?.fromGame && gameContext.versionGroupName && (
-                  <span className="text-sm font-normal text-[color:var(--muted)]">
+                  <span className="text-terminal text-xs text-neutral-500">
                     • {capitalizeName(gameContext.versionGroupName)}
                   </span>
                 )}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+              </h3>
+            </div>
+            <div className="space-y-4">
               <p className="text-sm text-[color:var(--muted)]">
                 {totalFilteredEncounters} encuentro(s) en {filteredVersions.length} videojuego(s)
                 {gameContext?.fromGame && (
@@ -975,21 +982,21 @@ export default function PokemonDetailsPage() {
                   {/* Header del videojuego - clickeable para expandir */}
                   <button
                     onClick={() => toggleVersion(versionData.version)}
-                    className="w-full px-4 py-3 flex items-center justify-between bg-[color:var(--card)] hover:bg-[color:var(--accent)] transition-colors"
+                    className="btn-secondary w-full px-4 py-3 flex items-center justify-between border-b border-neon/10"
                   >
                     <div className="flex items-center gap-3">
                       <div className="text-left">
-                        <p className="font-bold capitalize text-[color:var(--foreground)]">
+                        <p className="text-display font-bold capitalize text-neutral-200">
                           Pokémon {versionData.version.replace(/-/g, ' ')}
                         </p>
-                        <p className="text-xs text-[color:var(--muted)]">
+                        <p className="text-terminal text-xs text-neutral-500">
                           {versionData.generation?.replace(/-/g, ' ')} • {versionData.encounters.length} ubicación(es)
                         </p>
                       </div>
                     </div>
                     <svg 
                       xmlns="http://www.w3.org/2000/svg" 
-                      className={`h-5 w-5 transition-transform ${expandedVersions.has(versionData.version) ? 'rotate-180' : ''}`} 
+                      className={`h-5 w-5 transition-transform text-neon ${expandedVersions.has(versionData.version) ? 'rotate-180' : ''}`} 
                       fill="none" 
                       viewBox="0 0 24 24" 
                       stroke="currentColor"
@@ -1000,15 +1007,15 @@ export default function PokemonDetailsPage() {
 
                   {/* Lista de ubicaciones (expandible) */}
                   {expandedVersions.has(versionData.version) && (
-                    <div className="bg-[color:var(--background)]">
+                    <div className="bg-neutral-900">
                       {versionData.encounters.map((encounter, idx) => (
-                        <div key={idx} className="px-4 py-3 hover:bg-[color:var(--accent)] transition-colors">
+                        <div key={idx} className="px-4 py-3 hover:bg-neutral-800/50 transition-colors border-b border-neutral-800">
                           <div className="flex items-start justify-between gap-4">
                             <div className="flex-1">
-                              <p className="font-semibold text-[color:var(--foreground)] capitalize">
+                              <p className="font-semibold text-neutral-200 capitalize font-mono">
                                 {encounter.location?.replace(/-/g, ' ') || 'Ubicación desconocida'}
                               </p>
-                              <p className="text-sm text-[color:var(--muted)] capitalize">
+                              <p className="text-sm text-neutral-400 capitalize font-mono">
                                 {encounter.location_area?.replace(/-/g, ' ') || 'Área desconocida'}
                               </p>
                               <div className="flex flex-wrap gap-2 mt-2">
@@ -1033,40 +1040,42 @@ export default function PokemonDetailsPage() {
                 </div>
               ))}
             </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         )
       })()}
 
       {pokemonLocations && pokemonLocations.total_encounters === 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Ubicaciones de Captura</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8 text-[color:var(--muted)]">
+        <div className="pokedex-panel">
+          <div className="pokedex-panel-header">
+            <h3 className="panel-title">
+              CAPTURE LOCATIONS
+            </h3>
+          </div>
+          <div>
+            <div className="text-center py-8 text-neutral-500 text-terminal">
               <p>Este Pokémon no se puede encontrar en estado salvaje</p>
               <p className="text-sm mt-1">(Puede ser obtenido mediante evolución, intercambio o eventos)</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {loadingLocations && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Ubicaciones de Captura
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+        <div className="pokedex-panel">
+          <div className="pokedex-panel-header">
+            <h3 className="panel-title flex items-center gap-2">
+              CAPTURE LOCATIONS
+            </h3>
+          </div>
+          <div>
+            <div className="space-y-3 p-6">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full" />
+                <div key={i} className="skeleton h-16 w-full"></div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Modal de imagen en grande */}

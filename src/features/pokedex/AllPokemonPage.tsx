@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef, useCallback, startTransition } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { pokemonApi } from '@/shared/api/pokemon.api'
+import { TypeBadge } from '@/shared/components/neodex'
 
 interface PokemonItem {
   id: number
@@ -39,28 +40,6 @@ export default function AllPokemonPage() {
     'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug',
     'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'
   ]
-
-  // Colores de tipos de Pokémon
-  const typeColors: Record<string, string> = {
-    normal: 'bg-gray-400',
-    fire: 'bg-orange-500',
-    water: 'bg-blue-500',
-    electric: 'bg-yellow-400',
-    grass: 'bg-green-500',
-    ice: 'bg-cyan-400',
-    fighting: 'bg-red-600',
-    poison: 'bg-purple-500',
-    ground: 'bg-yellow-600',
-    flying: 'bg-indigo-400',
-    psychic: 'bg-pink-500',
-    bug: 'bg-lime-500',
-    rock: 'bg-yellow-700',
-    ghost: 'bg-purple-700',
-    dragon: 'bg-indigo-600',
-    dark: 'bg-gray-700',
-    steel: 'bg-gray-500',
-    fairy: 'bg-pink-400',
-  }
 
   // Función para cargar en segundo plano con CONCURRENCIA LIMITADA
   const loadPokemonBuffer = useCallback(async (startPage: number, endPage: number, searchTerm: string = '', typeFilters: string[] = []) => {
@@ -248,54 +227,67 @@ export default function AllPokemonPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <div className="text-center mb-6">
-          <h1 className="text-4xl font-bold text-[color:var(--text)] mb-2">
-            Pokédex Nacional
-          </h1>
-          <p className="text-[color:var(--muted)] text-lg">
-            {totalCount > 0 ? `${totalCount} Pokémon disponibles` : 'Cargando...'}
-          </p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="pokedex-panel p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-display text-2xl md:text-3xl text-neon mb-2">
+              POKÉMON LIST
+            </h1>
+            <p className="text-terminal text-sm text-neutral-400">
+              {totalCount > 0 ? `${totalCount} ENTRIES FOUND` : 'LOADING DATABASE...'}
+            </p>
+          </div>
+          <div className="hidden md:block">
+            <div className="flex items-center gap-2 px-4 py-2 bg-terminal/50 rounded-lg border border-neon/20">
+              <div className="led-dot led-green w-2 h-2"></div>
+              <span className="text-terminal text-xs text-neutral-400">ONLINE</span>
+            </div>
+          </div>
         </div>
 
-        {/* Buscador */}
-        <div className="max-w-md mx-auto mb-8">
-          <div className="relative">
+        {/* Buscador con estilo terminal */}
+        <div className="mb-6">
+          <div className="relative terminal-glass">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-pokedex-neon">
+              <span className="text-terminal text-sm">🔍</span>
+            </div>
             <input
               type="text"
-              placeholder="🔍 Buscar Pokémon por nombre..."
+              placeholder="Search Pokémon..."
               value={search}
               onChange={handleSearchChange}
-              className="w-full px-4 py-2 pr-10 rounded-lg border border-[color:var(--border)] bg-[color:var(--card)] text-[color:var(--foreground)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+              className="input-terminal w-full pl-10 pr-10 py-3 border-2 rounded-lg
+                       focus:outline-none focus:border-pokedex-neon/60 focus:ring-2 focus:ring-pokedex-neon/20
+                       transition-all"
             />
-            {/* Indicador de búsqueda activa */}
             {search !== debouncedSearch && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-pokedex-neon"></div>
               </div>
             )}
           </div>
           {search && (
-            <p className="text-xs text-[color:var(--muted)] mt-2 text-center">
+            <p className="text-xs text-neutral-500 mt-2 font-mono text-center">
               {search !== debouncedSearch 
-                ? 'Escribiendo...' 
+                ? '> PROCESSING...' 
                 : loading 
-                  ? 'Buscando...' 
-                  : `${pokemon.length} resultado${pokemon.length !== 1 ? 's' : ''} encontrado${pokemon.length !== 1 ? 's' : ''}`
+                  ? '> SEARCHING DATABASE...' 
+                  : `> ${pokemon.length} MATCH${pokemon.length !== 1 ? 'ES' : ''} FOUND`
               }
             </p>
           )}
         </div>
 
-        {/* Filtro por Tipo */}
-        <div className="max-w-4xl mx-auto mb-8">
-          <h3 className="text-center text-sm font-semibold text-[color:var(--muted)] mb-3">
-            Filtrar por Tipo {selectedTypes.length > 0 && `(${selectedTypes.length}/2 seleccionado${selectedTypes.length !== 1 ? 's' : ''})`}
+        {/* Filtro por Tipo con badges NeoDex */}
+        <div>
+          <h3 className="stat-label text-center mb-3">
+            Filter by Type {selectedTypes.length > 0 && `[${selectedTypes.length}/2]`}
           </h3>
           {selectedTypes.length >= 2 && (
-            <p className="text-center text-xs text-yellow-600 mb-2">
-              ⚠️ Máximo 2 tipos. Deselecciona uno para cambiar.
+            <p className="text-center text-xs text-pokedex-amber mb-3 text-terminal">
+              ⚠ MAX 2 TYPES SELECTED
             </p>
           )}
           <div className="flex flex-wrap justify-center gap-2">
@@ -309,18 +301,16 @@ export default function AllPokemonPage() {
                   onClick={() => handleTypeChange(type)}
                   disabled={isDisabled}
                   className={`
-                    px-4 py-2 rounded-lg font-semibold text-white text-sm
                     transition-all duration-200 transform
-                    ${typeColors[type] || 'bg-gray-400'}
                     ${isSelected
-                      ? 'ring-4 ring-yellow-400 scale-110' 
+                      ? 'ring-2 ring-pokedex-neon scale-105' 
                       : isDisabled
                         ? 'opacity-30 cursor-not-allowed'
-                        : 'opacity-60 hover:opacity-100 hover:scale-105'
+                        : 'opacity-70 hover:opacity-100 hover:scale-105'
                     }
                   `}
                 >
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
+                  <TypeBadge type={type} size="md" />
                 </button>
               )
             })}
@@ -329,17 +319,17 @@ export default function AllPokemonPage() {
             <div className="text-center mt-3">
               <button
                 onClick={() => setSelectedTypes([])}
-                className="text-sm text-[color:var(--muted)] hover:text-[color:var(--text)] underline"
+                className="text-xs text-neutral-500 hover:text-pokedex-neon font-mono underline transition-colors"
               >
-                ✕ Limpiar filtros
+                ✕ CLEAR FILTERS
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Grid de Pokémon */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+      {/* Grid de Pokémon con cards estilo Pokédex */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {pokemon.map((poke) => {
           const imageUrl = poke.sprites?.other?.['official-artwork']?.front_default 
             || poke.sprites?.front_default
@@ -348,15 +338,17 @@ export default function AllPokemonPage() {
           return (
             <div
               key={poke.id}
-              className="pokemon-item cursor-pointer hover:shadow-lg transition-all duration-200 hover:-translate-y-1 border-2 border-[color:var(--border)] hover:border-[color:var(--btn-bg)] rounded-lg overflow-hidden bg-[color:var(--card)]"
+              className="group cursor-pointer transition-all duration-200 hover:-translate-y-1"
               onClick={() => handlePokemonClick(poke.id)}
             >
-              <div className="p-4">
-                <div className="aspect-square bg-gray-100 rounded-lg mb-3 flex items-center justify-center overflow-hidden">
+              <div className="pokedex-panel p-3 h-full hover:ring-2 hover:ring-pokedex-neon/60 transition-all">
+                {/* Sprite container */}
+                <div className="aspect-square bg-neutral-900/50 rounded-lg mb-3 flex items-center justify-center overflow-hidden
+                              border border-neutral-800 group-hover:border-pokedex-neon/40 transition-colors">
                   <img
                     src={imageUrl}
                     alt={poke.name}
-                    className="w-full h-full object-contain hover:scale-110 transition-transform duration-200"
+                    className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-200"
                     loading="lazy"
                     decoding="async"
                     onError={(e) => {
@@ -365,28 +357,22 @@ export default function AllPokemonPage() {
                   />
                 </div>
 
+                {/* Info */}
                 <div className="text-center">
-                  <p className="text-xs text-gray-500 font-semibold mb-1">
-                    N° {poke.id.toString().padStart(4, '0')}
+                  <p className="text-[10px] text-neutral-500 font-mono font-semibold mb-1">
+                    #{poke.id.toString().padStart(4, '0')}
                   </p>
-                  <h3 className="font-bold text-gray-800 capitalize mb-2 truncate">
+                  <h3 className="font-semibold text-sm text-neutral-200 capitalize mb-2 truncate">
                     {poke.name}
                   </h3>
 
+                  {/* Type badges */}
                   <div className="flex gap-1 justify-center flex-wrap">
                     {poke.types && poke.types.map((type, index) => {
                       const typeName = typeof type === 'string' ? type : type?.name
-                      // Validar que el tipo tenga nombre
                       if (!typeName) return null
                       return (
-                        <span
-                          key={`${typeName}-${index}`}
-                          className={`px-2 py-1 rounded-full text-xs font-semibold text-white ${
-                            typeColors[typeName.toLowerCase()] || 'bg-gray-400'
-                          }`}
-                        >
-                          {typeName}
-                        </span>
+                        <TypeBadge key={`${typeName}-${index}`} type={typeName} size="sm" />
                       )
                     })}
                   </div>
@@ -396,68 +382,70 @@ export default function AllPokemonPage() {
           )
         })}
 
-        {/* Loading inicial solo (sin skeletons visibles después)  */}
+        {/* Loading inicial */}
         {loading && pokemon.length === 0 && (
-          <div className="col-span-full flex justify-center items-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[color:var(--primary)]"></div>
+          <div className="col-span-full flex flex-col items-center justify-center py-20 gap-4">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-neutral-800 border-t-pokedex-neon"></div>
+              <div className="absolute inset-0 rounded-full bg-pokedex-neon/20 blur-xl"></div>
+            </div>
+            <p className="text-sm font-mono text-neutral-500">LOADING DATABASE...</p>
           </div>
         )}
       </div>
 
       {/* No hay más resultados */}
       {!loading && !hasMore && pokemon.length > 0 && (
-        <div className="text-center py-8">
-          <p className="text-[color:var(--muted)] text-lg">
-            ✨ Has visto todos los Pokémon
+        <div className="text-center py-8 pokedex-panel">
+          <p className="text-terminal text-neutral-400 text-sm">
+            ✨ END OF DATABASE
           </p>
         </div>
       )}
 
       {/* Sin resultados */}
       {!loading && pokemon.length === 0 && (search || selectedTypes.length > 0) && (
-        <div className="text-center py-12">
-          <div className="text-6xl mb-4">🔍</div>
-          <p className="text-[color:var(--text)] text-xl font-semibold mb-2">
-            No se encontraron Pokémon
+        <div className="text-center py-12 pokedex-panel">
+          <div className="text-6xl mb-4 opacity-30">🔍</div>
+          <p className="text-neon text-lg text-display mb-2">
+            NO RESULTS FOUND
           </p>
-          <p className="text-[color:var(--muted)] text-lg mb-4">
+          <p className="text-terminal text-neutral-400 text-sm mb-6">
             {search && selectedTypes.length === 0 && (
-              <>No hay resultados para "<span className="font-semibold">{search}</span>"</>
+              <>QUERY: "<span className="text-pokedex-neon">{search}</span>"</>
             )}
             {!search && selectedTypes.length === 1 && (
-              <>No hay Pokémon de tipo <span className="font-semibold capitalize">{selectedTypes[0]}</span></>
+              <>TYPE: <span className="text-pokedex-neon uppercase">{selectedTypes[0]}</span></>
             )}
             {!search && selectedTypes.length === 2 && (
               <>
-                No hay Pokémon con los tipos{' '}
-                <span className="font-semibold capitalize">{selectedTypes[0]}</span>
-                {' y '}
-                <span className="font-semibold capitalize">{selectedTypes[1]}</span>
+                TYPES: <span className="text-pokedex-neon uppercase">{selectedTypes.join(' + ')}</span>
               </>
             )}
             {search && selectedTypes.length > 0 && (
               <>
-                No hay resultados para "<span className="font-semibold">{search}</span>" 
-                con {selectedTypes.length === 1 ? 'tipo' : 'tipos'}{' '}
-                <span className="font-semibold capitalize">{selectedTypes.join(', ')}</span>
+                QUERY: "<span className="text-pokedex-neon">{search}</span>" | 
+                TYPE{selectedTypes.length > 1 ? 'S' : ''}: <span className="text-pokedex-neon uppercase">{selectedTypes.join(' + ')}</span>
               </>
             )}
           </p>
-          <div className="flex gap-3 justify-center">
+          <div className="flex gap-3 justify-center flex-wrap">
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-lg hover:opacity-90 transition-opacity"
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg 
+                         transition-colors font-mono text-sm border border-neutral-700"
               >
-                Limpiar búsqueda
+                Clear Search
               </button>
             )}
             {selectedTypes.length > 0 && (
               <button
                 onClick={() => setSelectedTypes([])}
-                className="px-4 py-2 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] rounded-lg hover:opacity-90 transition-opacity"
+                className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-lg 
+                         transition-colors font-mono text-sm border border-neutral-700"
               >
-                Limpiar filtros de tipo
+                Clear Filters
               </button>
             )}
             {(search || selectedTypes.length > 0) && (
@@ -466,9 +454,10 @@ export default function AllPokemonPage() {
                   setSearch('')
                   setSelectedTypes([])
                 }}
-                className="px-4 py-2 border-2 border-[color:var(--btn-bg)] text-[color:var(--btn-bg)] rounded-lg hover:bg-[color:var(--btn-bg)] hover:text-[color:var(--btn-fg)] transition-all"
+                className="px-4 py-2 bg-pokedex-neon/20 hover:bg-pokedex-neon/30 text-pokedex-neon rounded-lg 
+                         transition-colors font-mono text-sm border border-pokedex-neon/40"
               >
-                Ver todos los Pokémon
+                Show All
               </button>
             )}
           </div>
@@ -477,9 +466,10 @@ export default function AllPokemonPage() {
 
       {/* Indicador de carga flotante */}
       {loading && pokemon.length > 0 && (
-        <div className="fixed bottom-8 right-8 bg-[color:var(--btn-bg)] text-[color:var(--btn-fg)] px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
-          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-          <span>Cargando más...</span>
+        <div className="fixed bottom-8 right-8 bg-terminal border-2 border-neon/60 text-neutral-200 
+                      px-4 py-2 rounded-lg shadow-panel flex items-center gap-3 backdrop-blur-sm">
+          <div className="loading-spinner h-4 w-4 border-2 border-neutral-700"></div>
+          <span className="text-terminal text-sm">LOADING...</span>
         </div>
       )}
     </div>

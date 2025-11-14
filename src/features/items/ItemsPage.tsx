@@ -1,7 +1,4 @@
 import { useState, useEffect, useRef, startTransition, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
-import { Input } from '@/shared/components/ui/input'
-import { Skeleton } from '@/shared/components/ui/skeleton'
 import { itemsApi, type Item } from '@/shared/api/items.api'
 
 export default function ItemsPage() {
@@ -129,10 +126,10 @@ export default function ItemsPage() {
   if (loading && items.length === 0) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-12 w-64" />
+        <div className="skeleton h-12 w-64"></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <Skeleton key={i} className="h-48" />
+            <div key={i} className="skeleton h-48"></div>
           ))}
         </div>
       </div>
@@ -142,42 +139,45 @@ export default function ItemsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <h1 className="text-3xl font-bold text-[color:var(--text)]">
-          Items Pokémon
-        </h1>
-        <p className="text-[color:var(--muted)]">
-          Explora todos los objetos disponibles en el mundo Pokémon
-        </p>
+      <div className="header-gradient-purple">
+        <div className="p-6">
+          <h1 className="page-title">
+            🎒 ITEMS DATABASE
+          </h1>
+          <p className="page-subtitle text-purple-100">
+            Explora todos los objetos disponibles en el mundo Pokémon
+          </p>
+        </div>
       </div>
 
       {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="pokedex-panel">
+        <div className="pokedex-panel-header">
+          <h3 className="panel-title">FILTERS</h3>
+        </div>
+        <div className="p-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Búsqueda */}
             <div>
-              <label className="text-sm font-medium text-[color:var(--text)] mb-2 block">
+              <label className="stat-label mb-2 block">
                 Buscar item
               </label>
-              <Input
+              <input
                 type="text"
                 placeholder="Ej: Potion, Master Ball"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                className="input-terminal"
               />
             </div>
 
             {/* Categoría */}
             <div>
-              <label className="text-sm font-medium text-[color:var(--text)] mb-2 block">
+              <label className="stat-label mb-2 block">
                 Categoría
               </label>
               <select
-                className="w-full px-3 py-2 rounded-lg border border-[color:var(--card-border)] bg-[color:var(--surface)] text-[color:var(--text)]"
+                className="select-terminal"
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
               >
@@ -190,17 +190,17 @@ export default function ItemsPage() {
               </select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Resultados */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-[color:var(--muted)]">
+        <p className="text-terminal text-sm text-neutral-500">
           Mostrando {items.length} de {total} items
         </p>
         {loadingMore && (
-          <div className="flex items-center gap-2 text-sm text-[color:var(--muted)]">
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[color:var(--primary)]"></div>
+          <div className="loading-text">
+            <div className="loading-spinner h-4 w-4"></div>
             <span>Cargando más...</span>
           </div>
         )}
@@ -209,14 +209,14 @@ export default function ItemsPage() {
       {/* Lista de items */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {items.map((item) => (
-          <Card key={item.id} className="hover:shadow-lg transition-shadow cursor-pointer">
-            <CardHeader className="pb-3">
+          <div key={item.id} className="data-list-item cursor-pointer">
+            <div className="pb-3 p-4 border-b border-terminal">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
-                  <CardTitle className="text-base leading-tight">
+                  <h3 className="text-display text-base leading-tight text-neutral-200">
                     {capitalizeName(item.name)}
-                  </CardTitle>
-                  <p className="text-xs text-[color:var(--muted)] mt-1">
+                  </h3>
+                  <p className="text-terminal text-xs text-neutral-500 mt-1">
                     {capitalizeName(item.category)}
                   </p>
                 </div>
@@ -228,51 +228,51 @@ export default function ItemsPage() {
                   />
                 )}
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            </div>
+            <div className="p-4 space-y-3">
               {/* Precio */}
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[color:var(--muted)]">Precio:</span>
-                <span className="text-lg font-bold text-[color:var(--text)]">
+                <span className="stat-label">Precio:</span>
+                <span className="stat-value text-lg">
                   {item.cost === 0 ? 'N/A' : formatPrice(item.cost)}
                 </span>
               </div>
 
               {/* Efecto */}
               <div>
-                <p className="text-xs text-[color:var(--muted)] line-clamp-3">
+                <p className="text-terminal text-xs text-neutral-400 line-clamp-3">
                   {item.effect || 'Sin descripción'}
                 </p>
               </div>
 
               {/* Fling info (si existe) */}
               {item.flingPower && (
-                <div className="pt-2 border-t border-[color:var(--card-border)]">
-                  <p className="text-xs text-[color:var(--muted)]">
-                    Fling Power: <span className="font-semibold text-[color:var(--text)]">{item.flingPower}</span>
+                <div className="pt-2 border-t border-neutral-800">
+                  <p className="text-xs text-neutral-500 font-mono">
+                    Fling Power: <span className="font-semibold text-pokedex-neon">{item.flingPower}</span>
                   </p>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
 
       {/* Sin resultados */}
       {items.length === 0 && !loading && (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-[color:var(--muted)]">
+        <div className="pokedex-panel">
+          <div className="py-12 text-center">
+            <p className="text-neutral-500 font-mono">
               No se encontraron items con los filtros seleccionados
             </p>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
       {/* Indicador de fin de lista */}
       {!hasMore && items.length > 0 && (
         <div className="text-center py-8">
-          <p className="text-sm text-[color:var(--muted)]">
+          <p className="text-sm text-neutral-500 font-mono">
             ✅ Has visto todos los items ({total} en total)
           </p>
         </div>
@@ -282,7 +282,7 @@ export default function ItemsPage() {
       {loadingMore && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
-            <Skeleton key={i} className="h-48" />
+            <div key={i} className="h-48 bg-neutral-800/50 animate-pulse rounded"></div>
           ))}
         </div>
       )}
